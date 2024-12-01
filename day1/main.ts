@@ -1,3 +1,5 @@
+const numberCount: { [key: number] : number; } = {}; 
+
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const lines: string[] = text.split("\n");
@@ -12,15 +14,22 @@ if (import.meta.main) {
     
     index++;
   }
+
+  for (const rNum of right) {
+    if (rNum in numberCount) {
+      numberCount[rNum] = numberCount[rNum] + 1;
+    } else {
+      numberCount[rNum] = 1;
+    }
+  }
   
-  const leftSorted = left.sort();
-  const rightSorted = right.sort();
-  let sum = 0;
+  let similarity = 0;
 
   for (let i = 0; i < 1000; i++) {
-    const diff = Math.abs(leftSorted[i] - rightSorted[i]);
-    sum += diff;
+    const lNum = left[i];
+    const score = lNum * (numberCount[lNum] ?? 0);
+    similarity += score;
   }
 
-  console.log(`Sum = ${sum}`);
+  console.log(`Similarity = ${similarity}`);
 }
