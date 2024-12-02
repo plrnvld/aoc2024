@@ -1,22 +1,15 @@
-function inc(numLine: number[]): boolean {
-  if (numLine.length === 0) {
-    return false;
-  }
-
-  if (numLine.length === 1) {
-    return true;
-  }
-
-  for (let i = 1; i < numLine.length; i++) {
-    if (numLine[i] < numLine[i - 1]) {
-      return false;
-    }
-  }
-
-  return true;
+function inc(numLine: number[]) {
+  return checkOrdered(numLine, (x, y) => y >= x);
 }
 
-function dec(numLine: number[]): boolean {
+function dec(numLine: number[]) {
+  return checkOrdered(numLine, (x, y) => y <= x);
+}
+
+function checkOrdered(
+  numLine: number[],
+  isOrdered: (x: number, y: number) => boolean,
+): boolean {
   if (numLine.length === 0) {
     return false;
   }
@@ -26,7 +19,7 @@ function dec(numLine: number[]): boolean {
   }
 
   for (let i = 1; i < numLine.length; i++) {
-    if (numLine[i] > numLine[i - 1]) {
+    if (!isOrdered(numLine[i - 1], numLine[i])) {
       return false;
     }
   }
@@ -35,7 +28,6 @@ function dec(numLine: number[]): boolean {
 }
 
 function diffLim(numLine: number[]): boolean {
-  console.log("Checking: " + numLine)
   if (numLine.length === 0 || numLine.length === 1) {
     return true;
   }
@@ -50,9 +42,10 @@ function diffLim(numLine: number[]): boolean {
   return true;
 }
 
+function checkLine(numLine: number[]) {
+  return (inc(numLine) || dec(numLine)) && diffLim(numLine);
+}
 
-
-// Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const lines: string[] = text.split("\n");
@@ -60,16 +53,21 @@ if (import.meta.main) {
 
   let index = 0;
   for (const line of lines) {
-    console.log("Setting " + line);
-    numLines[index] = line.split(" ").map(text => parseInt(text));
-
-    index++;
+    numLines[index++] = line.split(" ").map((text) => parseInt(text));
   }
 
   let numSafe = 0;
   for (const numLine of numLines) {
-    if ((inc(numLine) || dec(numLine)) && diffLim(numLine))
+    const linesList = [];
+    linesList.push(numLine);
+
+    for (let i = 0; i < numLine.length; i++) {
+      linesList.push(numLine.toSpliced(i, 1));
+    }
+
+    if (linesList.map((l) => checkLine(l)).some((x) => x)) {
       numSafe += 1;
+    }
   }
 
   console.log(numSafe);
