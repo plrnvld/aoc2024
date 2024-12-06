@@ -54,7 +54,7 @@ function nextDir(direction: [number, number]): [number, number] {
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("example");
+  const text = await Deno.readTextFile("input");
   const lines: string[] = text.split("\n");
 
   const obstacles = new Set<number>();
@@ -82,13 +82,15 @@ if (import.meta.main) {
 
   let loopCount = 0;
 
-  for (let row = 0; row < maxRow; row++) {
-    for (let col = 0; col < maxCol; col++) {
+  for (let row = 0; row <= maxRow; row++) {
+    for (let col = 0; col <= maxCol; col++) {
       const colRowKey = colRowToKey(col, row);
       if (
-        !obstacles.has(colRowKey) && col !== startPosition[0] &&
-        row !== startPosition[1]
+        !obstacles.has(colRowKey) || (col !== startPosition[0] &&
+          row !== startPosition[1])
       ) {
+        // console.log(`> Adding ${col},${row}`)
+
         const extendedObstacles = new Set([...obstacles]);
         extendedObstacles.add(colRowKey);
 
@@ -148,13 +150,13 @@ function hasLoop(
       throw new Error("Nowhere to go");
     }
 
-    position = nextPosition;
+    position = nextPosition; // Step
 
     if (inBounds(position, maxCol, maxRow)) {
       if (
         visited.has(colRowDirectionToKey(position[0], position[1], direction))
       ) {
-        // console.log("Loop detected at " + position);
+        console.log("Loop detected at " + position);
         return true;
       }
 
