@@ -1,4 +1,3 @@
-
 class Edge {
   constructor(from: number, to: number) {
     this.from = from;
@@ -9,57 +8,29 @@ class Edge {
   to: number;
 }
 
-function topologicalSort(nodes: number[], directedEdges: readonly Edge[]): number[] { 
-  const orderedList: number[] = [];
-  const relevantEdges = directedEdges.filter(e => nodes.includes(e.from) && nodes.includes(e.to));
-  let graph = [...relevantEdges];
-  
+function bruteForceTopologicalSort(
+  nodes: readonly number[],
+  directedEdges: readonly Edge[],
+): number[] {
+  let relevantEdges = directedEdges.filter((e) =>
+    nodes.includes(e.from) && nodes.includes(e.to)
+  );
+  let input = [...nodes];
+  const sortedNodes = [];
 
-  const nodesWithNoIncomingEdges = getNodesWithNoIncomingEdges(nodes, graph);
-
-  console.log(`Edges count: ${graph.length}`);
-  
-  while (nodesWithNoIncomingEdges.length > 0) {
-    const next = nodesWithNoIncomingEdges.pop()!;
-    orderedList.push(next);
-
-    const outgoingFromN = relevantEdges.filter(e => e.from === next);
-
-    for (const outgoing of outgoingFromN) {
-      const m = outgoing.to;
-
-      console.log(`> Removing ${outgoing.from}-${outgoing.to} from graph`);
-      const sizeBefore = graph.length;
-      graph = graph.filter(e => e !== outgoing);
-      const sizeAfter = graph.length;
-      console.log(`Before size ${sizeBefore}, after size ${sizeAfter}`);
-
-      if (!hasIncomingEdges(m, graph)) {
-        nodesWithNoIncomingEdges.push(m);
+  while (input.length > 0) {
+    for (const node of input) {
+      if (!relevantEdges.some((e) => e.to === node)) {
+        sortedNodes.push(node);
+        input = input.filter((item) => item !== node);
+        relevantEdges = relevantEdges.filter((e) => e.from !== node);
+        break;
       }
-    }    
+    }
   }
 
-  if (graph.length > 0)
-    throw new Error("Cycle detection");
-
-  return orderedList;
+  return sortedNodes;
 }
-
-function hasIncomingEdges(node: number, graph: readonly Edge[]): boolean {
-  return graph.some(e => e.to === node);
-}
-
-function getNodesWithNoIncomingEdges(nodes: number[], graph: readonly Edge[]): number[] {
-  const toNodes = graph.map(e => e.to);
-
-  const noIncomingEdges = nodes.filter(n => toNodes.includes(n));
-
-  console.log("No incoming edges: " + noIncomingEdges);
-
-  return noIncomingEdges;
-}
-
 
 function isOrdered(line: number[], notAllowedAfterMap: Map<number, number[]>) {
   for (let i = 0; i < line.length; i++) {
@@ -79,7 +50,7 @@ function isOrdered(line: number[], notAllowedAfterMap: Map<number, number[]>) {
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("example");
+  const text = await Deno.readTextFile("input");
   const lines: string[] = text.split("\n");
 
   const emptyIndex = lines.indexOf("");
@@ -115,14 +86,10 @@ if (import.meta.main) {
   let count = 0;
 
   for (const line of checkLines) {
-    if (isOrdered(line, notAllowedAfterMap)) {
-      const middleIndex = (line.length - 1) / 2;
-      count += line[middleIndex];
-    } else {
-      const graphNodes = [...new Set(edges.flatMap(e => [e.from, e.to]))];
-      console.log("Sorting: " + graphNodes);
-      const sorted = topologicalSort(line, edges);
-      console.log("==> Sorted: " + sorted);
+    if (!isOrdered(line, notAllowedAfterMap)) {
+      const sorted = bruteForceTopologicalSort(line, edges);
+      const middleIndex = (sorted.length - 1) / 2;
+      count += sorted[middleIndex];
     }
   }
 
