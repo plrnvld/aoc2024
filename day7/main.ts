@@ -8,6 +8,20 @@ class Equation {
   }
 }
 
+class SubResult {
+  currentValue: number;
+  nextIndex: number;
+
+  constructor(currentValue: number, nextIndex: number) {
+    this.currentValue = currentValue;
+    this.nextIndex = nextIndex;
+  }
+
+  isFinished(numberCount: number) {
+    return this.nextIndex >= numberCount;
+  }
+}
+
 function parseEquation(line: string): Equation {
   const parts = line.split(": ");
   const target = parseInt(parts[0]);
@@ -16,10 +30,43 @@ function parseEquation(line: string): Equation {
   return new Equation(target, numbers);
 }
 
+function isSolvable(equation: Equation) {
+  const stack: SubResult[] = [];
+
+  stack.push(new SubResult(equation.numbers[0], 1));
+
+  while (stack.length > 0) {
+    const curr = stack.pop()!;
+
+    if (curr.isFinished(equation.numbers.length)) {
+      if (curr.currentValue === equation.target) {
+        console.log("Target " + equation.target + " can be solved.")
+        return true;
+      }
+    } else if (curr.currentValue < equation.target) {
+      const nextNumber = equation.numbers[curr.nextIndex];
+      stack.push(new SubResult(curr.currentValue + nextNumber, curr.nextIndex + 1));
+      stack.push(new SubResult(curr.currentValue * nextNumber, curr.nextIndex + 1));
+    }
+  }
+
+  return false;
+}
+
 if (import.meta.main) {
-  const text = await Deno.readTextFile("example");
+  const text = await Deno.readTextFile("input");
   const lines: string[] = text.split("\n");
   const equations = lines.map(l => parseEquation(l));
 
-  console.log(equations);
+  let sum = 0;
+
+  for (const equation of equations) {
+    if (isSolvable(equation))
+      sum += equation.target;
+  }
+
+  console.log(sum);
 }
+
+
+// 5030884341842 too low
