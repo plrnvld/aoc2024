@@ -9,7 +9,11 @@ class Equation {
 }
 
 function parseEquation(line: string): Equation {
-  return new Equation(0, []);
+  const parts = line.split(": ");
+  const target = parseInt(parts[0]);
+  const numbers = parts[1].split(" ").map(t => parseInt(t));
+
+  return new Equation(target, numbers);
 }
 
 if (import.meta.main) {
@@ -17,5 +21,5 @@ if (import.meta.main) {
   const lines: string[] = text.split("\n");
   const equations = lines.map(l => parseEquation(l));
 
-  console.log(equations.length);
+  console.log(equations);
 }
