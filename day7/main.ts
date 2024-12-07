@@ -1,4 +1,4 @@
-class Equation {
+export class Equation {
   target: number;
   numbers: number[];
 
@@ -22,6 +22,11 @@ class SubResult {
   }
 }
 
+export function combineNumbers(numbers: number[]): number {
+  const texts: string[] = numbers.map((n) => n.toString());
+  return parseInt(texts.join(""));
+}
+
 function parseEquation(line: string): Equation {
   const parts = line.split(": ");
   const target = parseInt(parts[0]);
@@ -30,26 +35,41 @@ function parseEquation(line: string): Equation {
   return new Equation(target, numbers);
 }
 
-function isSolvable(equation: Equation) {
+export function isSolvable(equation: Equation) {
   const stack: SubResult[] = [];
 
-  stack.push(new SubResult(equation.numbers[0], 1));
+  for (let i = 1; i <= equation.numbers.length; i++) {
+    stack.push(new SubResult(combineNumbers(equation.numbers.slice(0, i)), i));
+  }
 
   while (stack.length > 0) {
     const curr = stack.pop()!;
 
     if (curr.isFinished(equation.numbers.length)) {
       if (curr.currentValue === equation.target) {
-        console.log("Target " + equation.target + " can be solved.");
         return true;
       }
     } else if (curr.currentValue <= equation.target) {
       const nextNumber = equation.numbers[curr.nextIndex];
+
       stack.push(
-        new SubResult(curr.currentValue + nextNumber, curr.nextIndex + 1),
+        new SubResult(
+          combineNumbers([curr.currentValue, nextNumber]),
+          curr.nextIndex + 1,
+        ),
+      );
+
+      stack.push(
+        new SubResult(
+          curr.currentValue + nextNumber,
+          curr.nextIndex + 1,
+        ),
       );
       stack.push(
-        new SubResult(curr.currentValue * nextNumber, curr.nextIndex + 1),
+        new SubResult(
+          curr.currentValue * nextNumber,
+          curr.nextIndex + 1,
+        ),
       );
     }
   }
@@ -72,3 +92,11 @@ if (import.meta.main) {
 
   console.log(sum);
 }
+
+// Part 1:
+// 5030892084481
+//
+// Part 2:
+// 5069305346448 too low
+// 91377448692324 too high
+// 91377448644679
