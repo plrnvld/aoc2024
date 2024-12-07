@@ -58,7 +58,6 @@ export function isSolvable(equation: Equation) {
           curr.nextIndex + 1,
         ),
       );
-
       stack.push(
         new SubResult(
           curr.currentValue + nextNumber,
