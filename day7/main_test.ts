@@ -1,8 +1,8 @@
 import { assertEquals } from "@std/assert";
-import { combineNumbers, Equation, isSolvable } from "./main.ts";
+import { concatNumbers, Equation, isSolvable } from "./main.ts";
 
 Deno.test(function combineTest() {
-  assertEquals(combineNumbers([23, 45]), 2345);
+  assertEquals(concatNumbers([23, 45]), 2345);
 });
 
 Deno.test(function isSolvableTest() {

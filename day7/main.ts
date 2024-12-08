@@ -22,7 +22,7 @@ class SubResult {
   }
 }
 
-export function combineNumbers(numbers: number[]): number {
+export function concatNumbers(numbers: number[]): number {
   const texts: string[] = numbers.map((n) => n.toString());
   return parseInt(texts.join(""));
 }
@@ -38,9 +38,7 @@ function parseEquation(line: string): Equation {
 export function isSolvable(equation: Equation) {
   const stack: SubResult[] = [];
 
-  for (let i = 1; i <= equation.numbers.length; i++) {
-    stack.push(new SubResult(combineNumbers(equation.numbers.slice(0, i)), i));
-  }
+  stack.push(new SubResult(concatNumbers(equation.numbers.slice(0, 1)), 1));
 
   while (stack.length > 0) {
     const curr = stack.pop()!;
@@ -54,7 +52,7 @@ export function isSolvable(equation: Equation) {
 
       stack.push(
         new SubResult(
-          combineNumbers([curr.currentValue, nextNumber]),
+          concatNumbers([curr.currentValue, nextNumber]),
           curr.nextIndex + 1,
         ),
       );
