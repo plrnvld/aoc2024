@@ -6,6 +6,14 @@ class Pos {
     this.row = row;
     this.col = col;
   }
+
+  add(diffRow: number, diffCol: number): Pos {
+    return new Pos(this.row + diffRow, this.col + diffCol);
+  }
+
+  sub(diffRow: number, diffCol: number): Pos {
+    return new Pos(this.row - diffRow, this.col - diffCol);
+  }
 }
 
 class AntennaMap {
@@ -37,14 +45,34 @@ function combinations(positions: Pos[]): [Pos, Pos][] {
   return combs;
 }
 
-function antinodes(position1: Pos, position2: Pos): Pos[] {
+function antinodes(
+  position1: Pos,
+  position2: Pos,
+  antennaMap: AntennaMap,
+): Pos[] {
+  const antis = [];
+
   const diffRow = position2.row - position1.row;
   const diffCol = position2.col - position1.col;
 
-  const antinode1 = new Pos(position1.row - diffRow, position1.col - diffCol);
-  const antinode2 = new Pos(position2.row + diffRow, position2.col + diffCol);
+  antis.push(position1);
+  antis.push(position2);
 
-  return [antinode1, antinode2];
+  // Go into subtraction direction
+  let next = position1.sub(diffRow, diffCol);
+  while (antennaMap.inBounds(next)) {
+    antis.push(next);
+    next = next.sub(diffRow, diffCol);
+  }
+
+  // Go into addition direction
+  next = position2.add(diffRow, diffCol);
+  while (antennaMap.inBounds(next)) {
+    antis.push(next);
+    next = next.add(diffRow, diffCol);
+  }
+
+  return antis;
 }
 
 function rowColToKey(row: number, col: number): number {
@@ -58,12 +86,10 @@ function countAntinodes(antennaMap: AntennaMap): number {
     const combs = combinations(antennaMap.antennas.get(antennaName)!);
 
     for (const comb of combs) {
-      const antisInBounds = antinodes(comb[0], comb[1]).filter((a) =>
-        antennaMap.inBounds(a)
-      );
+      const antis = antinodes(comb[0], comb[1], antennaMap);
 
-      for (const antiInBounds of antisInBounds) {
-        antinodeSet.add(rowColToKey(antiInBounds.row, antiInBounds.col));
+      for (const anti of antis) {
+        antinodeSet.add(rowColToKey(anti.row, anti.col));
       }
     }
   }
