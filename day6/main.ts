@@ -89,8 +89,6 @@ if (import.meta.main) {
         !obstacles.has(colRowKey) || (col !== startPosition[0] &&
           row !== startPosition[1])
       ) {
-        // console.log(`> Adding ${col},${row}`)
-
         const extendedObstacles = new Set([...obstacles]);
         extendedObstacles.add(colRowKey);
 
@@ -123,8 +121,6 @@ function hasLoop(
   let direction: [number, number] = [...startDirection];
 
   const visited = new Set<number>();
-
-  // console.log("Starting at " + position + " with direction " + direction);
 
   visited.add(colRowDirectionToKey(position[0], position[1], direction));
 
