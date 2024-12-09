@@ -32,5 +32,41 @@ if (import.meta.main) {
     console.log(`Block ${i.toString().repeat(blockSize(i, diskMap))} trailed by ${freeSpaceAfter(i, diskMap)} spaces.`)
   }
 
-  console.log(findNumBlocks(diskMap));
+  let righBlockId = numBlocks - 1;
+  let leftBlockId = 0;
+  let rightBlockRemaining = blockSize(righBlockId, diskMap);
+  let rightIndex = diskMap.length - 1;
+  let leftIndex = 0;
+  let checkSum = 0;
+
+  while (leftBlockId <= righBlockId) { // Don't count the last right block items twice
+    for (let j = 0; j < blockSize(leftBlockId, diskMap); j++) {
+      const addLeft = leftIndex * leftBlockId;
+
+      console.log(`Adding ${leftIndex} * ${leftBlockId} = ${addLeft}`)
+
+      checkSum += addLeft
+      leftIndex++;
+    }
+
+    leftBlockId++;
+
+    for (let k = 0; k < freeSpaceAfter(leftBlockId, diskMap) && leftIndex < rightIndex; k++) {
+      if (rightBlockRemaining == 0) {
+        righBlockId--;
+        rightBlockRemaining = blockSize(righBlockId, diskMap);
+      }
+
+      const addRight = leftIndex * righBlockId;
+
+      console.log(`Adding ${leftIndex} * ${righBlockId} = ${addRight}`)
+
+      checkSum += addRight
+      rightBlockRemaining--;
+      leftIndex++;
+      rightIndex--;
+    }
+  }
+
+  console.log(checkSum);
 }
