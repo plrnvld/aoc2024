@@ -15,6 +15,15 @@ class Block {
     this.size = size;
     this.freeSpacesAfter = freeSpacesAfter;
   }
+
+  get checksumPart() {
+    let checksum = 0;
+    for (let i = 0; i < this.size; i++) {
+      checksum += (this.index + i) * this.blockId;
+    }
+
+    return checksum;
+  }
 }
 
 class GapPosition {
@@ -55,20 +64,38 @@ function getBlockSize(blockId: number, diskMap: string) {
   return parseInt(diskMap[blockIndex]);
 }
 
-function moveBlockAfter(blockToMove: Block, afterBlockId: number, allBlocks: Block[]): Block[] {
+function moveBlockAfter(
+  blockToMove: Block,
+  blockBeforeBlockToMove: Block,
+  afterBlockId: number,
+  allBlocks: Block[],
+): Block[] {
+  console.log("*** moveBlockAfter called ***");
+
   const newBlocksList: Block[] = [];
+
+  console.log(
+    `---> Moving block ${blockToMove.blockId} after block ${afterBlockId}`,
+  );
 
   for (let i = 0; i < allBlocks.length; i++) {
     const currBlock = allBlocks[i];
     if (currBlock.blockId !== blockToMove.blockId) {
-      newBlocksList.push(currBlock)
+      newBlocksList.push(currBlock);
     }
 
     if (currBlock.blockId === afterBlockId) {
-      if (currBlock.freeSpacesAfter < blockToMove.size)
+      if (currBlock.freeSpacesAfter < blockToMove.size) {
         throw new Error(`Block ${blockToMove} does not fit after ${currBlock}`);
-      
-      blockToMove.freeSpacesAfter = currBlock.freeSpacesAfter - blockToMove.size;
+      }
+
+      blockToMove.freeSpacesAfter = currBlock.freeSpacesAfter -
+        blockToMove.size;
+      blockToMove.index = currBlock.index + currBlock.size;
+
+      blockBeforeBlockToMove.freeSpacesAfter += blockToMove.size +
+        blockToMove.freeSpacesAfter;
+
       newBlocksList.push(blockToMove);
 
       currBlock.freeSpacesAfter = 0;
@@ -78,11 +105,31 @@ function moveBlockAfter(blockToMove: Block, afterBlockId: number, allBlocks: Blo
   return newBlocksList;
 }
 
+function findBlockToMoveAfter(
+  blockToMove: Block,
+  blocks: Block[],
+  startBlockIndex: number,
+  endBlockIndex: number,
+): number | undefined {
+  console.log(`> Trying to move block ${blockToMove.blockId}`);
+
+  for (let i = startBlockIndex; i < endBlockIndex; i++) {
+    const currBlock = blocks[i];
+    if (currBlock.freeSpacesAfter >= blockToMove.size) {
+      console.log(`>>> New spot after ${currBlock.blockId} found.`);
+      return currBlock.blockId;
+    }
+  }
+
+  console.log(`> Block ${blockToMove.blockId} cannot be moved`);
+  return undefined;
+}
+
 if (import.meta.main) {
   const diskMap = await Deno.readTextFile("example");
   const numBlocks = findNumBlocks(diskMap);
 
-  const blocks: Block[] = [];
+  let blocks: Block[] = [];
   let currIndex = 0;
 
   for (let i = 0; i < numBlocks; i++) {
@@ -92,8 +139,30 @@ if (import.meta.main) {
     blocks.push(newBlock);
     currIndex += blockSize + gapSize;
 
-    console.log(newBlock);
+    // console.log(newBlock);
   }
 
-  console.log(blocks.length);
+  for (let j = numBlocks - 1; j >= 0; j--) {
+    const currBlock = blocks[j];
+    const moveAfter = findBlockToMoveAfter(currBlock, blocks, 0, j);
+
+    console.log("    >>> MOVING '" + moveAfter + "'");
+
+    if (moveAfter !== undefined) {
+      blocks = moveBlockAfter(currBlock, blocks[j - 1], moveAfter, blocks);
+    } else {
+      console.log("WHYWHYWHY!");
+    }
+  }
+
+  let checksum = 0;
+
+  for (const bl of blocks) {
+    console.log(bl);
+    checksum += bl.checksumPart;
+  }
+
+  console.log(checksum);
 }
+
+// 9816325965332 too high
