@@ -67,10 +67,6 @@ function moveBlockAfter(
 ): Block[] {
   const newBlocksList: Block[] = [];
 
-  console.log(
-    `Moving block ${blockToMove.blockId} to after block ${afterBlockId}`,
-  );
-
   for (let i = 0; i < allBlocks.length; i++) {
     const currBlock = allBlocks[i];
     if (currBlock.blockId !== blockToMove.blockId) {
@@ -91,10 +87,6 @@ function moveBlockAfter(
       if (blockBeforeBlockToMove) {
         blockBeforeBlockToMove.freeSpacesAfter += blockToMove.size +
           originalFreeSpaceAfter;
-
-        console.log(
-          `> Block ${blockBeforeBlockToMove.blockId} now has ${blockBeforeBlockToMove.freeSpacesAfter} free space.`,
-        );
       }
 
       newBlocksList.push(blockToMove);
@@ -118,7 +110,6 @@ function findBlockToMoveAfter(
     }
   }
 
-  console.log(`> Block ${blockToMove.blockId} cannot be moved`);
   return undefined;
 }
 
@@ -154,12 +145,6 @@ if (import.meta.main) {
     currIndex += blockSize + gapSize;
   }
 
-  const originalBlocks = blocks.slice();
-
-  for (const bl of blocks) {
-    console.log(bl);
-  }
-
   for (let j = numBlocks - 1; j >= 0; j--) {
     const [currBlock, prevBlock] = findBlockWithIdAndPrevBlock(j, blocks);
     const moveAfter = findBlockToMoveAfter(currBlock, blocks, 0);
@@ -174,12 +159,10 @@ if (import.meta.main) {
   let line = "";
 
   for (const bl of blocks) {
-    console.log(bl);
     checksum += bl.checksumPart;
     line += bl.toString();
   }
 
-  console.log(line);
   console.log();
 
   console.log(checksum);
@@ -187,3 +170,4 @@ if (import.meta.main) {
 
 // 9816325965332 too high
 // 6418529554426 too high
+// 6418529470362
