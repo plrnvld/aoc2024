@@ -77,15 +77,60 @@ class TopoMap {
   }
 }
 
-function findNines(start: Pos, map: TopoMap): Set<number> {
+function findNines(start: Pos, map: TopoMap): Set<number>[] {
+  const setList: Set<number>[] = [];
   let levelSet = new Set<number>();
   levelSet.add(start.key);
+  setList.push(levelSet);
 
   for (let level = 0; level < 9; level++) {
     levelSet = takeMeToTheNextLevel(level, levelSet, map);
+    setList.push(levelSet);
   }
 
-  return levelSet;
+  return setList;
+}
+
+function countTrails(start: Pos, setList: Set<number>[]): number {
+  return countTrailsFrom(1, start, setList);
+}
+
+function countTrailsFrom(
+  level: number,
+  posPrevLevel: Pos,
+  setList: Set<number>[],
+): number {
+  let trailCount = 0;
+
+  const levelSet = setList[level];
+
+  const left = posPrevLevel.left;
+  const right = posPrevLevel.right;
+  const up = posPrevLevel.up;
+  const down = posPrevLevel.down;
+
+  if (level === 9) {
+    if (levelSet.has(left.key)) {
+      trailCount += 1;
+    }
+    if (right && levelSet.has(right.key)) {
+      trailCount += 1;
+    }
+    if (up && levelSet.has(up.key)) {
+      trailCount += 1;
+    }
+    if (down && levelSet.has(down.key)) {
+      trailCount += 1;
+    }
+
+    return trailCount;
+  }
+
+  const nextLevel = level + 1;
+  return countTrailsFrom(nextLevel, left, setList) +
+    countTrailsFrom(nextLevel, right, setList) +
+    countTrailsFrom(nextLevel, up, setList) +
+    countTrailsFrom(nextLevel, down, setList);
 }
 
 function takeMeToTheNextLevel(
@@ -104,22 +149,18 @@ function takeMeToTheNextLevel(
     const down = map.getWithPos(pos.down);
 
     if (left === nextLevel) {
-      console.log(`Found level ${nextLevel} at ${pos.left}`);
       resultSet.add(pos.left.key);
     }
 
     if (right === nextLevel) {
-      console.log(`Found level ${nextLevel} at ${pos.right}`);
       resultSet.add(pos.right.key);
     }
 
     if (up === nextLevel) {
-      console.log(`Found level ${nextLevel} at ${pos.up}`);
       resultSet.add(pos.up.key);
     }
 
     if (down === nextLevel) {
-      console.log(`Found level ${nextLevel} at ${pos.down}`);
       resultSet.add(pos.down.key);
     }
   }
@@ -128,17 +169,17 @@ function takeMeToTheNextLevel(
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("input");
+  const text = await Deno.readTextFile("larger example");
   const mapLines = text.split("\n").map((line) =>
     Array.from(line).map((c) => parseInt(c))
   );
 
   const map = new TopoMap(mapLines);
 
-  let nineCount = 0;
+  let trailCount = 0;
   for (const zeroPos of map.zeroes) {
-    nineCount += findNines(zeroPos, map).size;
+    trailCount += countTrails(zeroPos, findNines(zeroPos, map));
   }
 
-  console.log(nineCount);
+  console.log(trailCount);
 }
