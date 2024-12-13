@@ -24,15 +24,9 @@ class Block {
 
     return checksum;
   }
-}
 
-class GapPosition {
-  lastBlockId: number;
-  gapStartIndex: number;
-
-  constructor(lastBlockId: number, gapStartIndex: number) {
-    this.lastBlockId = lastBlockId;
-    this.gapStartIndex = gapStartIndex;
+  toString() {
+    return this.blockId.toString().repeat(this.size) + ".".repeat(this.freeSpacesAfter);
   }
 }
 
@@ -70,13 +64,9 @@ function moveBlockAfter(
   afterBlockId: number,
   allBlocks: Block[],
 ): Block[] {
-  console.log("*** moveBlockAfter called ***");
-
   const newBlocksList: Block[] = [];
 
-  console.log(
-    `---> Moving block ${blockToMove.blockId} after block ${afterBlockId}`,
-  );
+  console.log(`Moving block ${blockToMove.blockId} to after block ${afterBlockId}`);
 
   for (let i = 0; i < allBlocks.length; i++) {
     const currBlock = allBlocks[i];
@@ -89,13 +79,17 @@ function moveBlockAfter(
         throw new Error(`Block ${blockToMove} does not fit after ${currBlock}`);
       }
 
+      const originalFreeSpaceAfter = blockToMove.freeSpacesAfter;
+
       blockToMove.freeSpacesAfter = currBlock.freeSpacesAfter -
         blockToMove.size;
       blockToMove.index = currBlock.index + currBlock.size;
 
       blockBeforeBlockToMove.freeSpacesAfter += blockToMove.size +
-        blockToMove.freeSpacesAfter;
-
+      originalFreeSpaceAfter;
+      
+      console.log(`> Block ${blockBeforeBlockToMove.blockId} now has ${blockBeforeBlockToMove.freeSpacesAfter} free space.`)
+      
       newBlocksList.push(blockToMove);
 
       currBlock.freeSpacesAfter = 0;
@@ -111,18 +105,24 @@ function findBlockToMoveAfter(
   startBlockIndex: number,
   endBlockIndex: number,
 ): number | undefined {
-  console.log(`> Trying to move block ${blockToMove.blockId}`);
-
   for (let i = startBlockIndex; i < endBlockIndex; i++) {
     const currBlock = blocks[i];
     if (currBlock.freeSpacesAfter >= blockToMove.size) {
-      console.log(`>>> New spot after ${currBlock.blockId} found.`);
       return currBlock.blockId;
     }
   }
 
   console.log(`> Block ${blockToMove.blockId} cannot be moved`);
   return undefined;
+}
+
+function findBlockWithId(blockId: number,  blocks: Block[]): [number, Block] {
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i].blockId === blockId)
+      return [i, blocks[i]];
+  }
+  
+  throw new Error(`Cannot find ${blockId}`);
 }
 
 if (import.meta.main) {
@@ -138,31 +138,36 @@ if (import.meta.main) {
     const newBlock = new Block(i, currIndex, blockSize, gapSize);
     blocks.push(newBlock);
     currIndex += blockSize + gapSize;
+  }
 
-    // console.log(newBlock);
+  for (const bl of blocks) {
+    console.log(bl);
   }
 
   for (let j = numBlocks - 1; j >= 0; j--) {
-    const currBlock = blocks[j];
-    const moveAfter = findBlockToMoveAfter(currBlock, blocks, 0, j);
-
-    console.log("    >>> MOVING '" + moveAfter + "'");
+    const [blockIndex, currBlock] = findBlockWithId(j, blocks);
+    const moveAfter = findBlockToMoveAfter(currBlock, blocks, 0, blockIndex - 1);
 
     if (moveAfter !== undefined) {
-      blocks = moveBlockAfter(currBlock, blocks[j - 1], moveAfter, blocks);
-    } else {
-      console.log("WHYWHYWHY!");
+      blocks = moveBlockAfter(currBlock, blocks[blockIndex - 1], moveAfter, blocks);
     }
   }
 
   let checksum = 0;
 
+  let line = "";
+
   for (const bl of blocks) {
     console.log(bl);
     checksum += bl.checksumPart;
+    line += bl.toString();
   }
+
+  console.log(line);
+  console.log();
 
   console.log(checksum);
 }
 
 // 9816325965332 too high
+// 6418529554426 too high
