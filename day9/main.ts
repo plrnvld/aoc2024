@@ -26,7 +26,8 @@ class Block {
   }
 
   toString() {
-    return this.blockId.toString().repeat(this.size) + ".".repeat(this.freeSpacesAfter);
+    return this.blockId.toString().repeat(this.size) +
+      ".".repeat(this.freeSpacesAfter);
   }
 }
 
@@ -60,13 +61,15 @@ function getBlockSize(blockId: number, diskMap: string) {
 
 function moveBlockAfter(
   blockToMove: Block,
-  blockBeforeBlockToMove: Block,
+  blockBeforeBlockToMove: Block | undefined,
   afterBlockId: number,
   allBlocks: Block[],
 ): Block[] {
   const newBlocksList: Block[] = [];
 
-  console.log(`Moving block ${blockToMove.blockId} to after block ${afterBlockId}`);
+  console.log(
+    `Moving block ${blockToMove.blockId} to after block ${afterBlockId}`,
+  );
 
   for (let i = 0; i < allBlocks.length; i++) {
     const currBlock = allBlocks[i];
@@ -85,11 +88,15 @@ function moveBlockAfter(
         blockToMove.size;
       blockToMove.index = currBlock.index + currBlock.size;
 
-      blockBeforeBlockToMove.freeSpacesAfter += blockToMove.size +
-      originalFreeSpaceAfter;
-      
-      console.log(`> Block ${blockBeforeBlockToMove.blockId} now has ${blockBeforeBlockToMove.freeSpacesAfter} free space.`)
-      
+      if (blockBeforeBlockToMove) {
+        blockBeforeBlockToMove.freeSpacesAfter += blockToMove.size +
+          originalFreeSpaceAfter;
+
+        console.log(
+          `> Block ${blockBeforeBlockToMove.blockId} now has ${blockBeforeBlockToMove.freeSpacesAfter} free space.`,
+        );
+      }
+
       newBlocksList.push(blockToMove);
 
       currBlock.freeSpacesAfter = 0;
@@ -103,9 +110,8 @@ function findBlockToMoveAfter(
   blockToMove: Block,
   blocks: Block[],
   startBlockIndex: number,
-  endBlockIndex: number,
 ): number | undefined {
-  for (let i = startBlockIndex; i < endBlockIndex; i++) {
+  for (let i = startBlockIndex; blocks[i] !== blockToMove; i++) {
     const currBlock = blocks[i];
     if (currBlock.freeSpacesAfter >= blockToMove.size) {
       return currBlock.blockId;
@@ -116,17 +122,25 @@ function findBlockToMoveAfter(
   return undefined;
 }
 
-function findBlockWithId(blockId: number,  blocks: Block[]): [number, Block] {
+function findBlockWithIdAndPrevBlock(
+  blockId: number,
+  blocks: Block[],
+): [Block, Block | undefined] {
   for (let i = 0; i < blocks.length; i++) {
-    if (blocks[i].blockId === blockId)
-      return [i, blocks[i]];
+    if (blocks[i].blockId === blockId) {
+      if (i === 0) {
+        return [blocks[0], undefined];
+      } else {
+        return [blocks[i], blocks[i - 1]];
+      }
+    }
   }
-  
+
   throw new Error(`Cannot find ${blockId}`);
 }
 
 if (import.meta.main) {
-  const diskMap = await Deno.readTextFile("example");
+  const diskMap = await Deno.readTextFile("input");
   const numBlocks = findNumBlocks(diskMap);
 
   let blocks: Block[] = [];
@@ -140,16 +154,18 @@ if (import.meta.main) {
     currIndex += blockSize + gapSize;
   }
 
+  const originalBlocks = blocks.slice();
+
   for (const bl of blocks) {
     console.log(bl);
   }
 
   for (let j = numBlocks - 1; j >= 0; j--) {
-    const [blockIndex, currBlock] = findBlockWithId(j, blocks);
-    const moveAfter = findBlockToMoveAfter(currBlock, blocks, 0, blockIndex - 1);
+    const [currBlock, prevBlock] = findBlockWithIdAndPrevBlock(j, blocks);
+    const moveAfter = findBlockToMoveAfter(currBlock, blocks, 0);
 
     if (moveAfter !== undefined) {
-      blocks = moveBlockAfter(currBlock, blocks[blockIndex - 1], moveAfter, blocks);
+      blocks = moveBlockAfter(currBlock, prevBlock, moveAfter, blocks);
     }
   }
 
