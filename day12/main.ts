@@ -16,6 +16,18 @@ class Pos {
   }
 }
 
+type Direction = "up" | "down" | "left" | "right";
+
+class Fence {
+  readonly pos: Pos;
+  readonly direction: Direction;
+
+  constructor(pos: Pos, direction: Direction) {
+    this.pos = pos;
+    this.direction = direction;
+  }
+}
+
 class Area {
   readonly label: string;
   readonly positionKeys: Set<number>;
@@ -32,26 +44,34 @@ class Area {
   calculatePrice(plot: Plot): number {
     const areaSize = this.positionKeys.size;
 
-    let perimeter = 0;
+    const fences: Fence[] = [];
 
     for (const key of this.positionKeys) {
       const pos = fromKey(key);
 
-      const neighborPositions = [
-        plot.left(pos),
-        plot.right(pos),
-        plot.up(pos),
-        plot.down(pos),
-      ];
+      const left = plot.left(pos);
+      const right = plot.right(pos);
+      const up = plot.up(pos);
+      const down = plot.down(pos);
 
-      const numNeighbors = neighborPositions.filter((n) =>
-        n !== undefined && this.positionKeys.has(n.key)
-      ).length;
-      const fencesNeeded = 4 - numNeighbors;
-      perimeter += fencesNeeded;
+      if (left === undefined || !this.positionKeys.has(left.key)) {
+        fences.push(new Fence(pos, "left"));
+      }
+
+      if (right === undefined || !this.positionKeys.has(right.key)) {
+        fences.push(new Fence(pos, "right"));
+      }
+
+      if (up === undefined || !this.positionKeys.has(up.key)) {
+        fences.push(new Fence(pos, "up"));
+      }
+
+      if (down === undefined || !this.positionKeys.has(down.key)) {
+        fences.push(new Fence(pos, "down"));
+      }
     }
 
-    return areaSize * perimeter;
+    return areaSize * fences.length;
   }
 }
 
