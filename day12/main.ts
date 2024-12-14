@@ -71,7 +71,19 @@ class Area {
       }
     }
 
-    return areaSize * fences.length;
+    return areaSize * this.calculateSides(fences);
+  }
+
+  calculateSides(fences: Fence[]): number {
+    if (fences.length < 4) {
+      throw new Error("Cannot close the fence");
+    }
+
+    // const currFence = fences.pop()!;
+    // const currDir = currFence.direction;
+    // const currPos = currFence.pos;
+
+    return fences.length;
   }
 }
 
