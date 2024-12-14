@@ -102,10 +102,22 @@ if (import.meta.main) {
   );
   let stonesRound = stoneGroups;
 
+  // Future Date
+  const firstDate: Date = new Date();
+
   const rounds = 75;
   for (let n = 1; n <= rounds; n++) {
     stonesRound = applyStoneGroupsBlink(stonesRound);
   }
+
+  // Current Date
+  const secondDate: Date = new Date();
+
+  // Time Difference in Milliseconds
+  const milliDiff: number = secondDate.getTime() -
+    firstDate.getTime();
+
+  console.log("Millis: " + milliDiff);
 
   console.log(
     stonesRound.map((s) => s.count).reduce(
