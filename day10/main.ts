@@ -102,6 +102,8 @@ function countTrailsFrom(
 ): number {
   let trailCount = 0;
 
+  // console.log("Going to level " + level);
+
   const levelSet = setList[level];
 
   const left = posPrevLevel.left;
@@ -127,10 +129,21 @@ function countTrailsFrom(
   }
 
   const nextLevel = level + 1;
-  return countTrailsFrom(nextLevel, left, setList) +
-    countTrailsFrom(nextLevel, right, setList) +
-    countTrailsFrom(nextLevel, up, setList) +
-    countTrailsFrom(nextLevel, down, setList);
+  
+  if (levelSet.has(left.key)) {
+    trailCount += countTrailsFrom(nextLevel, left, setList);
+  }
+  if (right && levelSet.has(right.key)) {
+    trailCount += countTrailsFrom(nextLevel, right, setList);
+  }
+  if (up && levelSet.has(up.key)) {
+    trailCount += countTrailsFrom(nextLevel, up, setList);
+  }
+  if (down && levelSet.has(down.key)) {
+    trailCount += countTrailsFrom(nextLevel, down, setList);
+  }
+  
+  return trailCount;
 }
 
 function takeMeToTheNextLevel(
@@ -169,7 +182,7 @@ function takeMeToTheNextLevel(
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("larger example");
+  const text = await Deno.readTextFile("input");
   const mapLines = text.split("\n").map((line) =>
     Array.from(line).map((c) => parseInt(c))
   );
@@ -178,7 +191,15 @@ if (import.meta.main) {
 
   let trailCount = 0;
   for (const zeroPos of map.zeroes) {
-    trailCount += countTrails(zeroPos, findNines(zeroPos, map));
+    const findNineSetList = findNines(zeroPos, map);
+    
+    console.log(findNineSetList)
+
+    const addedTrails = countTrails(zeroPos, findNineSetList);
+
+    console.log(`Found ${addedTrails} new trails for ${zeroPos}}.`);
+
+    trailCount += addedTrails;
   }
 
   console.log(trailCount);
