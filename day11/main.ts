@@ -29,8 +29,9 @@ if (import.meta.main) {
   const stones = text.split(" ").map((t) => parseInt(t));
   let stonesRound = stones;
 
-  const rounds = 25;
+  const rounds = 75;
   for (let n = 1; n <= rounds; n++) {
+    console.log(`Round ${n}, last round had ${stonesRound.length} stones.`);
     stonesRound = stonesRound.flatMap(s => applyBlink(s));
     // console.log(`Round ${n}: ${stonesRound}`);
   }
