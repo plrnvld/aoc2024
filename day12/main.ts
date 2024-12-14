@@ -28,6 +28,31 @@ class Area {
   toString(): string {
     return `${this.label}: ${this.positionKeys}`;
   }
+
+  calculatePrice(plot: Plot): number {
+    const areaSize = this.positionKeys.size;
+
+    let perimeter = 0;
+
+    for (const key of this.positionKeys) {
+      const pos = fromKey(key);
+
+      const neighborPositions = [
+        plot.left(pos),
+        plot.right(pos),
+        plot.up(pos),
+        plot.down(pos),
+      ];
+
+      const numNeighbors = neighborPositions.filter((n) =>
+        n !== undefined && this.positionKeys.has(n.key)
+      ).length;
+      const fencesNeeded = 4 - numNeighbors;
+      perimeter += fencesNeeded;
+    }
+
+    return areaSize * perimeter;
+  }
 }
 
 class Plot {
@@ -186,5 +211,10 @@ if (import.meta.main) {
 
   const areas = findAreas(plot);
 
-  console.log(areas);
+  console.log(
+    areas.map((a) => a.calculatePrice(plot)).reduce(
+      (sum, next) => sum + next,
+      0,
+    ),
+  );
 }
