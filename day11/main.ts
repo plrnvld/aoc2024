@@ -2,15 +2,20 @@ class StoneGroup {
   stone: number;
   count: number;
 
-  constructor(stone: number, count: number) {
+  constructor(stone: number, count: number = 1) {
     this.stone = stone;
     this.count = count;
+  }
+
+  toString(): string {
+    return `[${this.count} x stone ${this.stone}]`;
   }
 }
 
 function getEvenDigits(stone: number): string | null {
-  if (stone <= 0)
+  if (stone <= 0) {
     throw new Error(`Number ${stone} not supported for even digit check.`);
+  }
 
   const stoneText = stone.toString();
   return stoneText.length % 2 === 0 ? stoneText : null;
@@ -19,62 +24,93 @@ function getEvenDigits(stone: number): string | null {
 function splitEvenDigits(stoneText: string): number[] {
   const halfLength = stoneText.length / 2;
 
-  return [parseInt(stoneText.slice(0, halfLength)), parseInt(stoneText.slice(halfLength))];
+  return [
+    parseInt(stoneText.slice(0, halfLength)),
+    parseInt(stoneText.slice(halfLength)),
+  ];
 }
 
-function fromUnsortedStones(stones: number[]): StoneGroup[] {
-  return fromSortedStones(stones.toSorted());
+function applyStoneGroupBlink(stoneGroup: StoneGroup): StoneGroup[] {
+  const blinkedStones = applyBlink(stoneGroup.stone);
+
+  return blinkedStones.map((s) => new StoneGroup(s, stoneGroup.count));
 }
 
-function fromSortedStones(sortedStones: number[]): StoneGroup[] {
-  const sortedStoneGroups: StoneGroup[] = [];
+function applyStoneGroupsBlink(stoneGroups: StoneGroup[]): StoneGroup[] {
+  const blinkedGroups = stoneGroups.flatMap((g) => applyStoneGroupBlink(g));
 
-  if (sortedStones.length === 0)
-    return sortedStoneGroups;
+  return combineGroups(blinkedGroups);
+}
 
-  let currStone = sortedStones[0];
-  let currGroupCount = 1;
+function combineGroups(stoneGroups: StoneGroup[]): StoneGroup[] {
+  if (stoneGroups.length < 2) {
+    return stoneGroups;
+  }
 
-  for (let i = 1; i < sortedStones.length; i++) {
-    const nextStone = sortedStones[i];
-    if (nextStone === currStone) {
-      currGroupCount += 1;
+  const combined: StoneGroup[] = [];
+  const sortedGroups = stoneGroups.toSorted(compareGroups);
+
+  let currStone = sortedGroups[0].stone;
+  let currCount = sortedGroups[0].count;
+
+  for (let i = 1; i < sortedGroups.length; i++) {
+    const nextStone = sortedGroups[i].stone;
+    const nextCount = sortedGroups[i].count;
+
+    if (currStone === nextStone) {
+      currCount += nextCount;
     } else {
-      sortedStoneGroups.push(new StoneGroup(currStone, currGroupCount));
+      combined.push(new StoneGroup(currStone, currCount));
       currStone = nextStone;
-      currGroupCount = 1;
+      currCount = nextCount;
     }
   }
 
-  sortedStoneGroups.push(new StoneGroup(currStone, currGroupCount));
+  combined.push(new StoneGroup(currStone, currCount));
 
-  return sortedStoneGroups;
+  return combined;
+}
+
+function compareGroups(x: StoneGroup, y: StoneGroup): number {
+  if (x.stone < y.stone) {
+    return -1;
+  }
+  if (x.stone < y.stone) {
+    return 1;
+  }
+
+  return 0;
 }
 
 function applyBlink(stone: number): number[] {
-  if (stone === 0)
+  if (stone === 0) {
     return [1];
+  }
 
   const evenDigits = getEvenDigits(stone);
-  if (evenDigits)
+  if (evenDigits) {
     return splitEvenDigits(evenDigits);
+  }
 
   return [2024 * stone];
 }
 
-
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
-  const stones = text.split(" ").map((t) => parseInt(t));
-  let stonesRound = stones;
+  const stoneGroups = text.split(" ").map((t) => parseInt(t)).map((s) =>
+    new StoneGroup(s)
+  );
+  let stonesRound = stoneGroups;
 
-  const rounds = 10;
+  const rounds = 75;
   for (let n = 1; n <= rounds; n++) {
-    // console.log(`Round ${n}, last round had ${stonesRound.length} stones.`);
-    stonesRound = stonesRound.flatMap(s => applyBlink(s)).toSorted();
-    console.log(`Round ${n}: ${stonesRound}`);
-    console.log();
+    stonesRound = applyStoneGroupsBlink(stonesRound);
   }
 
-  console.log(stonesRound.length);
+  console.log(
+    stonesRound.map((s) => s.count).reduce(
+      (sum, next) => sum + next,
+      0,
+    ),
+  );
 }
