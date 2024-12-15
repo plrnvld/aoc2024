@@ -29,20 +29,28 @@ export function modulo(num: number, wrap: number) {
   return num % wrap;
 }
 
-function printRobots(robots: Robot[], wide: number, tall: number) {
-  const positions = robots.map(r => r.getPos(wide, tall));
+function printRobots(robots: Robot[], wide: number, tall: number): string {
+  
+  const countsTexts: string[] = [];
+  const positions = robots.map((r) => r.getPos(wide, tall));
 
   for (let y = 0; y < tall; y++) {
     const counts: number[] = [];
-      
+
     for (let x = 0; x < wide; x++) {
-      const count = positions.filter(p => p.at(0) === x && p.at(1) === y).length;
+      const count = positions.filter((p) =>
+        p.at(0) === x && p.at(1) === y
+      ).length;
       counts.push(count);
     }
 
-    const countsText = counts.map(c => c === 0 ? "." : c.toString()).join("");
-    console.log(countsText);
+    const countsText = counts.map((c) => c === 0 ? "." : c.toString()).join("");
+    // console.log(countsText);
+
+    countsTexts.push(countsText);
   }
+
+  return countsTexts.join("\n");
 }
 
 function parseRobot(line: string) {
@@ -58,10 +66,6 @@ if (import.meta.main) {
   const lines = text.split("\n");
   const robots = lines.map((line) => parseRobot(line)); // .slice(0, 1); // ####
 
-  console.log(robots);
-
-  const seconds = 100;
-
   let q1 = 0;
   let q2 = 0;
   let q3 = 0;
@@ -73,23 +77,33 @@ if (import.meta.main) {
   const midX = (wide - 1) / 2;
   const midY = (tall - 1) / 2;
 
-  for (const robot of robots) {
-    robot.move(seconds);
-    const [x, y] = robot.getPos(wide, tall);
+  const allTexts: string[] = [];
 
-    if (x < midX && y < midY) {
-      q1 += 1;
-    } else if (x > midX && y < midY) {
-      q2 += 1;
-    } else if (x > midX && y > midY) {
-      q3 += 1;
-    } else if (x < midX && y > midY) {
-      q4 += 1;
+  for (let seconds = 5000; seconds < 7000; seconds++) {
+
+    console.log();
+    console.log("%cSecond " + seconds, "color: #FFC0CB");
+
+    for (const robot of robots) {
+      robot.move(seconds);
+      const [x, y] = robot.getPos(wide, tall);
+
+      if (x < midX && y < midY) {
+        q1 += 1;
+      } else if (x > midX && y < midY) {
+        q2 += 1;
+      } else if (x > midX && y > midY) {
+        q3 += 1;
+      } else if (x < midX && y > midY) {
+        q4 += 1;
+      }
     }
 
+    const robotText = "\nAFTER " + seconds +"\n\n" + printRobots(robots, wide, tall);
+    allTexts.push(robotText);
   }
 
-  printRobots(robots, wide, tall);
+  await Deno.writeTextFile("easteregg.txt", allTexts.join("\n"));
 
   const product = q1 * q2 * q3 * q4;
 
