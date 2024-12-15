@@ -71,19 +71,80 @@ class Area {
       }
     }
 
-    return areaSize * this.calculateSides(fences);
+    return areaSize * this.calculateSides(fences, plot);
   }
 
-  calculateSides(fences: Fence[]): number {
+  calculateSides(fences: Fence[], plot: Plot): number {
     if (fences.length < 4) {
       throw new Error("Cannot close the fence");
     }
 
-    // const currFence = fences.pop()!;
-    // const currDir = currFence.direction;
-    // const currPos = currFence.pos;
+    let steps = 1;
 
-    return fences.length;
+    let sides = 0;
+
+    const startFence = fences[0]!;
+    let currFence = startFence;
+    let nextFence = this.findNextFenceClockwise(currFence, fences, plot);
+
+    while (nextFence !== currFence) {
+      if (nextFence.direction !== currFence.direction) {
+        sides += 1;
+      }
+
+      currFence = nextFence;
+
+      nextFence = this.findNextFenceClockwise(currFence, fences);
+
+      steps += 1;
+
+      if (steps > fences.length) {
+        throw new Error("Visiting fences multiple times");
+      }
+    }
+
+    return sides;
+  }
+
+  findNextFenceClockwise(fence: Fence, fences: Fence[], plot: Plot): Fence {
+    if (fence.direction === "up") {
+      const rightTurn = fences.find(f => f.pos.key === fence.pos.key && f.direction === "right");
+      if (rightTurn !== undefined)
+        return rightTurn;
+
+      const straigthPos = plot.right(fence.pos);
+      if (straigthPos !== undefined) {
+        const straight = fences.find(f => f.pos.key === straigthPos.key && f.direction === "up");
+        if (straight !== undefined)
+          return straight;
+      }
+
+      const leftTurnPos = plot.right(fence.pos);
+      
+
+
+    }
+
+    if (fence.direction === "right") {
+
+
+      
+    }
+
+    if (fence.direction === "down") {
+
+
+      
+    }
+
+    if (fence.direction === "left") {
+
+
+      
+    }
+
+
+    throw new Error("No next fence found");
   }
 }
 
