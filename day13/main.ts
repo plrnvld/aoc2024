@@ -41,7 +41,15 @@ function parsePrizeConfig(block: string): PrizeConfig {
   const prizeY = parseInt(prizeParts[1]);
   const prizeX = parseInt(prizeParts[0].split("Prize: X=")[1]);
 
-  return new PrizeConfig(aDeltaX, aDeltaY, bDeltaX, bDeltaY, prizeX, prizeY);
+  const conversionError = 10000000000000;
+  return new PrizeConfig(
+    aDeltaX,
+    aDeltaY,
+    bDeltaX,
+    bDeltaY,
+    prizeX + conversionError,
+    prizeY + conversionError,
+  );
 }
 
 function findCheapestPrize(config: PrizeConfig): number | undefined {
@@ -76,8 +84,9 @@ if (import.meta.main) {
     const tokenCost = findCheapestPrize(config);
     console.log("Cheapest prize = " + tokenCost);
 
-    if (tokenCost !== undefined)
+    if (tokenCost !== undefined) {
       totalTokens += tokenCost;
+    }
   }
 
   console.log(totalTokens);
