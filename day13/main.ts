@@ -52,24 +52,21 @@ function parsePrizeConfig(block: string): PrizeConfig {
   );
 }
 
-function findCheapestPrize(config: PrizeConfig): number | undefined {
-  let minimumTokens;
+function solve(config: PrizeConfig): [number, number] | undefined {
+  const b: number =
+    (config.aDeltaY * config.prizeX - config.aDeltaX * config.prizeY) /
+    (config.bDeltaX * config.aDeltaY - config.aDeltaX * config.bDeltaY);
 
-  for (let a = 0; a <= 100; a++) {
-    for (let b = 0; b <= 100; b++) {
-      if (
-        a * config.aDeltaX + b * config.bDeltaX === config.prizeX &&
-        a * config.aDeltaY + b * config.bDeltaY === config.prizeY
-      ) {
-        const tokens = 3 * a + b;
-        if (minimumTokens === undefined || tokens < minimumTokens) {
-          minimumTokens = tokens;
-        }
-      }
-    }
+  const a: number = (config.prizeX - config.bDeltaX * b) / config.aDeltaX;
+
+  if (Math.round(a) === a && Math.round(b) === b) {
+    console.log(`Solution is A=${a} B=${b}`);
+  } else {
+    console.log(`No solution`);
+    return undefined;
   }
 
-  return minimumTokens;
+  return [a, b];
 }
 
 if (import.meta.main) {
@@ -81,12 +78,14 @@ if (import.meta.main) {
 
   for (const config of configs) {
     console.log(config);
-    const tokenCost = findCheapestPrize(config);
-    console.log("Cheapest prize = " + tokenCost);
-
-    if (tokenCost !== undefined) {
+    const result = solve(config);
+    if (result !== undefined) {
+      const [a, b] = result;
+      const tokenCost = 3 * a + b;
       totalTokens += tokenCost;
     }
+
+    console.log();
   }
 
   console.log(totalTokens);
