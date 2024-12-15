@@ -12,6 +12,13 @@ class Robot {
   }
 }
 
+export function modulo(num: number, wrap: number) {
+  if (num < 0)
+    return (wrap + (num % wrap));
+
+  return num % wrap;
+}
+
 function parseRobot(line: string) {
   const parts = line.split(" v=");
   const [vX, vY] = parts[1].split(",").map(v => parseInt(v));
