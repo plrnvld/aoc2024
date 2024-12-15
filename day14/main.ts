@@ -16,14 +16,14 @@ class Robot {
     this.y += this.vY * secs;
   }
 
-  getPos(xWrap: number, yWrap: number): [number, number] {
-    return [modulo(this.x, xWrap), modulo(this.y, yWrap)];
+  getPos(wide: number, tall: number): [number, number] {
+    return [modulo(this.x, wide), modulo(this.y, tall)];
   }
 }
 
 export function modulo(num: number, wrap: number) {
   if (num < 0) {
-    return (wrap + (num % wrap));
+    return (wrap + (num % wrap)) % wrap;
   }
 
   return num % wrap;
@@ -54,19 +54,21 @@ function parseRobot(line: string) {
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("example");
+  const text = await Deno.readTextFile("input");
   const lines = text.split("\n");
-  const robots = lines.map((line) => parseRobot(line));
+  const robots = lines.map((line) => parseRobot(line)); // .slice(0, 1); // ####
 
-  const seconds = 5;
+  console.log(robots);
+
+  const seconds = 100;
 
   let q1 = 0;
   let q2 = 0;
   let q3 = 0;
   let q4 = 0;
 
-  const wide = 11;
-  const tall = 7;
+  const wide = 101;
+  const tall = 103;
 
   const midX = (wide - 1) / 2;
   const midY = (tall - 1) / 2;

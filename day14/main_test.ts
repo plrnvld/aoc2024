@@ -11,4 +11,5 @@ Deno.test(function moduloTest() {
   assertEquals(modulo(1774, 100), 74);
   assertEquals(modulo(101, 101), 0);
   assertEquals(modulo(100, 101), 100);
+  assertEquals(modulo(-14, 7), 0);
 });
