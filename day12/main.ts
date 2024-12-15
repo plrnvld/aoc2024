@@ -11,6 +11,10 @@ class Pos {
     return this.row * 1000 + this.col;
   }
 
+  add(rowDelta: number, colDelta: number): Pos {
+    return new Pos(this.row + rowDelta, this.col + colDelta);
+  }
+
   toString(): string {
     return `${this.row},${this.col}`;
   }
@@ -25,6 +29,48 @@ class Fence {
   constructor(pos: Pos, direction: Direction) {
     this.pos = pos;
     this.direction = direction;
+  }
+
+  isEqualTo(other: Fence): boolean {
+    return this.pos.row === other.pos.row &&
+      this.pos.col === other.pos.col &&
+      this.direction === other.direction;
+  }
+
+  nextFences(): Fence[] {
+    if (this.direction === "up") {
+      return [
+        new Fence(this.pos, "right"),
+        new Fence(this.pos.add(0, 1), "up"),
+        new Fence(this.pos.add(-1, 1), "left"),
+      ];
+    }
+
+    if (this.direction === "right") {
+      return [
+        new Fence(this.pos, "down"),
+        new Fence(this.pos.add(1, 0), "right"),
+        new Fence(this.pos.add(1, 1), "up"),
+      ];
+    }
+
+    if (this.direction === "down") {
+      return [
+        new Fence(this.pos, "left"),
+        new Fence(this.pos.add(0, -1), "down"),
+        new Fence(this.pos.add(1, -1), "right"),
+      ];
+    }
+
+    if (this.direction === "left") {
+      return [
+        new Fence(this.pos, "up"),
+        new Fence(this.pos.add(-1, 0), "left"),
+        new Fence(this.pos.add(-1, -1), "down"),
+      ];
+    }
+
+    throw new Error("Cannot find next fences");
   }
 }
 
@@ -71,78 +117,82 @@ class Area {
       }
     }
 
-    return areaSize * this.calculateSides(fences, plot);
+    const sides = this.calculateSides(fences);
+    const price = areaSize * sides;
+
+    console.log(
+      `Price for area ${this.label} = ${areaSize}(size) x ${sides}(sides) = ${price}`,
+    );
+
+    return price;
   }
 
-  calculateSides(fences: Fence[], plot: Plot): number {
+  calculateSides(fences: Fence[]): number {
     if (fences.length < 4) {
       throw new Error("Cannot close the fence");
     }
 
-    let steps = 1;
-
     let sides = 0;
 
-    const startFence = fences[0]!;
-    let currFence = startFence;
-    let nextFence = this.findNextFenceClockwise(currFence, fences, plot);
+    while (fences.length > 0) {
+      const startFence = fences[0]!;
 
-    while (nextFence !== currFence) {
+      let currFence = startFence;
+      let nextFence = this.findNextFence(currFence, fences);
+
+      const fenceLoop: Fence[] = [];
+      fenceLoop.push(currFence);
+
+      while (!nextFence.isEqualTo(startFence)) {
+        if (nextFence.direction !== currFence.direction) {
+          sides += 1;
+        }
+
+        currFence = nextFence;
+        fenceLoop.push(currFence);
+
+        nextFence = this.findNextFence(currFence, fences);
+      }
+
+      // Count last side when the loop was just closed
       if (nextFence.direction !== currFence.direction) {
         sides += 1;
       }
 
-      currFence = nextFence;
+      for (const fenceToRemove of fenceLoop) {
+        const index = fences.findIndex((f) => f.isEqualTo(fenceToRemove));
+        if (index === -1) {
+          throw new Error("Fence needs to be there");
+        }
 
-      nextFence = this.findNextFenceClockwise(currFence, fences);
-
-      steps += 1;
-
-      if (steps > fences.length) {
-        throw new Error("Visiting fences multiple times");
+        fences.splice(index, 1);
       }
     }
 
     return sides;
   }
 
-  findNextFenceClockwise(fence: Fence, fences: Fence[], plot: Plot): Fence {
-    if (fence.direction === "up") {
-      const rightTurn = fences.find(f => f.pos.key === fence.pos.key && f.direction === "right");
-      if (rightTurn !== undefined)
-        return rightTurn;
+  findNextFence(fence: Fence, fences: Fence[]): Fence {
+    // Always search for the fences in the same order, to not get lost closing the loop
+    const [turnRight, goStraight, turnLeft] = fence.nextFences();
 
-      const straigthPos = plot.right(fence.pos);
-      if (straigthPos !== undefined) {
-        const straight = fences.find(f => f.pos.key === straigthPos.key && f.direction === "up");
-        if (straight !== undefined)
-          return straight;
-      }
+    const turnRightFence = fences.find((f) => f.isEqualTo(turnRight));
 
-      const leftTurnPos = plot.right(fence.pos);
-      
-
-
+    if (turnRightFence != undefined) {
+      return turnRightFence;
     }
 
-    if (fence.direction === "right") {
+    const goStraightFence = fences.find((f) => f.isEqualTo(goStraight));
 
-
-      
+    if (goStraightFence != undefined) {
+      return goStraightFence;
     }
 
-    if (fence.direction === "down") {
+    const turnLeftFence = fences.find((f) => f.isEqualTo(turnLeft));
 
-
-      
+    if (turnLeftFence != undefined) {
+      return turnLeftFence;
     }
-
-    if (fence.direction === "left") {
-
-
-      
-    }
-
 
     throw new Error("No next fence found");
   }
