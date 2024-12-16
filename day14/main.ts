@@ -29,8 +29,26 @@ export function modulo(num: number, wrap: number) {
   return num % wrap;
 }
 
+function countConnected(robots: Robot[], wide: number, tall: number) {
+  let connected = 0;
+
+  for (const robot of robots) {
+    const [x, y] = robot.getPos(wide, tall);
+    if (
+      robots.some((r) => {
+        const [otherX, otherY] = r.getPos(wide, tall);
+        return Math.abs(x - otherX) <= 1 && Math.abs(y - otherY) <= 1 &&
+          !(x === otherX && y === otherY);
+      })
+    ) {
+      connected += 1;
+    }
+  }
+
+  return connected;
+}
+
 function printRobots(robots: Robot[], wide: number, tall: number): string {
-  
   const countsTexts: string[] = [];
   const positions = robots.map((r) => r.getPos(wide, tall));
 
@@ -64,7 +82,7 @@ function parseRobot(line: string) {
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const lines = text.split("\n");
-  const robots = lines.map((line) => parseRobot(line)); // .slice(0, 1); // ####
+  const robots = lines.map((line) => parseRobot(line));
 
   let q1 = 0;
   let q2 = 0;
@@ -79,13 +97,13 @@ if (import.meta.main) {
 
   const allTexts: string[] = [];
 
-  for (let seconds = 5000; seconds < 7000; seconds++) {
-
+  for (let n = 0; n < 10000; n++) {
+    const seconds = n + 1;
     console.log();
     console.log("%cSecond " + seconds, "color: #FFC0CB");
 
     for (const robot of robots) {
-      robot.move(seconds);
+      robot.move(1);
       const [x, y] = robot.getPos(wide, tall);
 
       if (x < midX && y < midY) {
@@ -99,8 +117,14 @@ if (import.meta.main) {
       }
     }
 
-    const robotText = "\nAFTER " + seconds +"\n\n" + printRobots(robots, wide, tall);
-    allTexts.push(robotText);
+    const robotText = "\n\nAFTER " + seconds + "\n" +
+      printRobots(robots, wide, tall);
+    const connected = countConnected(robots, wide, tall);
+    console.log("Connection: " + connected);
+
+    if (connected >= 300) {
+      allTexts.push(robotText);
+    }
   }
 
   await Deno.writeTextFile("easteregg.txt", allTexts.join("\n"));
