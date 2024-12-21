@@ -10,6 +10,17 @@ class Pos {
   add(deltaX: number, deltaY: number) {
     return new Pos(this.x + deltaX, this.y + deltaY);
   }
+
+  get key(): number {
+    return this.y * 1000 + this.x;
+  }
+}
+
+function fromKey(key: number): Pos {
+  const x = key % 1000;
+  const y = (key - x) / 1000;
+
+  return new Pos(x, y);
 }
 
 type Spot = "empty" | "box" | "wall";
@@ -77,41 +88,74 @@ class Board {
       return;
     }
 
-    const boxList = this.boxList(nextPos, deltaX, deltaY);
-    const lastSpot = boxList.at(-1);
+    // Next spot is box
 
-    if (lastSpot === "empty") {
-      this.spots[nextPos.y][nextPos.x] = "empty";
-      const movedBoxes = boxList.length - 1;
-      this
-        .spots[nextPos.y + movedBoxes * deltaY][
-          nextPos.x + movedBoxes * deltaX
-        ] = "box";
-      this.robotPos = nextPos;
-    } else if (lastSpot === "wall") {
+    const boxSet = this.boxSet(nextPos, move);
+    const nextPositions = this.nextPosList(boxSet, move);
+
+    const hasCollision = nextPositions.some(p => this.getSpot(p) === "wall")
+    if (hasCollision)
       return;
-    } else {
-      throw new Error("Unexpected last spot " + lastSpot);
+
+    // No collision, time to move
+    for (const key of boxSet) {
+      this.setSpot(fromKey(key), "empty");
     }
+
+    for (const nextBoxPos of nextPositions) {
+      this.setSpot(nextBoxPos, "box");
+    }
+
+    this.robotPos = nextPos;
   }
 
-  boxList(firstBoxPos: Pos, deltaX: number, deltaY: number): Spot[] {
-    const spotList: Spot[] = [];
-    let currPos = firstBoxPos;
-    let currSpot = this.spots[currPos.y][currPos.x];
-    if (currSpot !== "box") {
-      throw new Error("First spot must be a box, but is a " + currSpot);
+  boxSet(boxPos: Pos, move: Move): Set<number> {
+    const set: Set<number> = new Set();
+
+    return this.#boxSet(boxPos, move, set);
+  }
+
+  nextPosList(boxSet: Set<number>, move: Move): Pos[] {
+    const result: Pos[] = [];
+    const [dx, dy] = moveDelta(move);
+
+    for (const key of boxSet) {
+      result.push(fromKey(key).add(dx, dy));
     }
 
-    spotList.push(currSpot);
+    return result;
+  }
 
-    while (currSpot === "box") {
-      currPos = currPos.add(deltaX, deltaY);
-      currSpot = this.spots[currPos.y][currPos.x];
-      spotList.push(currSpot);
+  #boxSet(pos: Pos, move: Move, set: Set<number>): Set<number> {
+    const posSpot = this.getSpot(pos);
+    if (posSpot !== "box")
+      return set;
+
+    const isNew = !set.has(pos.key);
+    if (isNew) {
+      set.add(pos.key);
+
+      
+      for (const nextPos of this.nextBoxPosList(pos, move)) {
+        this.#boxSet(nextPos, move, set);
+      }
     }
 
-    return spotList;
+    return set;
+  }
+
+  nextBoxPosList(pos: Pos, move: Move): Pos[] {
+    const [dx, dy] = moveDelta(move);
+    const nextPos = pos.add(dx, dy);
+    return [nextPos];
+  }
+
+  getSpot(pos: Pos): Spot {
+    return this.spots[pos.y][pos.x];
+  }
+
+  setSpot(pos: Pos, spot: Spot) {
+    this.spots[pos.y][pos.x] = spot;
   }
 
   print() {
