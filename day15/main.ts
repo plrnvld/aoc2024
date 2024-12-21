@@ -23,7 +23,8 @@ function fromKey(key: number): Pos {
   return new Pos(x, y);
 }
 
-type Spot = "empty" | "box" | "wall";
+type Spot = "empty" | BoxSpot | "wall";
+type BoxSpot = "[" | "]";
 type Move = "^" | ">" | "<" | "v";
 
 function moveDelta(move: Move): [number, number] {
@@ -41,6 +42,16 @@ function moveDelta(move: Move): [number, number] {
   }
 }
 
+class NextPos {
+  pos: Pos;
+  originalBox: BoxSpot;
+  
+  constructor(pos: Pos, originalBox: BoxSpot) {
+    this.pos = pos;
+    this.originalBox = originalBox;
+  }
+}
+
 class Board {
   width: number;
   height: number;
@@ -53,16 +64,19 @@ class Board {
 
     this.spots = [];
 
-    for (let y = 0; y < this.width; y++) {
+    for (let y = 0; y < this.height; y++) {
       this.spots.push(Array(this.width).fill("empty"));
 
       for (let x = 0; x < this.width; x++) {
+        console.log(` > Trying to read ${x},${y}`)
         const c = boardLines[y][x];
 
         if (c === "@") {
           this.robotPos = new Pos(x, y);
-        } else if (c === "O") {
-          this.spots[y][x] = "box";
+        } else if (c === "[") {
+          this.spots[y][x] = "["; 
+        } else if (c === "]") {
+          this.spots[y][x] = "]"; 
         } else if (c === "#") {
           this.spots[y][x] = "wall";
         }
@@ -93,7 +107,7 @@ class Board {
     const boxSet = this.boxSet(nextPos, move);
     const nextPositions = this.nextPosList(boxSet, move);
 
-    const hasCollision = nextPositions.some(p => this.getSpot(p) === "wall")
+    const hasCollision = nextPositions.some(p => this.getSpot(p.pos) === "wall")
     if (hasCollision)
       return;
 
@@ -103,7 +117,7 @@ class Board {
     }
 
     for (const nextBoxPos of nextPositions) {
-      this.setSpot(nextBoxPos, "box");
+      this.setSpot(nextBoxPos.pos, nextBoxPos.originalBox);
     }
 
     this.robotPos = nextPos;
@@ -115,12 +129,15 @@ class Board {
     return this.#boxSet(boxPos, move, set);
   }
 
-  nextPosList(boxSet: Set<number>, move: Move): Pos[] {
-    const result: Pos[] = [];
+  nextPosList(boxSet: Set<number>, move: Move): NextPos[] {
+    const result: NextPos[] = [];
     const [dx, dy] = moveDelta(move);
 
     for (const key of boxSet) {
-      result.push(fromKey(key).add(dx, dy));
+      const pos = fromKey(key);
+      const nextPos: Pos = pos.add(dx, dy);
+      const originalBox: BoxSpot = this.getSpot(pos) as BoxSpot;
+      result.push(new NextPos(nextPos, originalBox));
     }
 
     return result;
@@ -128,7 +145,7 @@ class Board {
 
   #boxSet(pos: Pos, move: Move, set: Set<number>): Set<number> {
     const posSpot = this.getSpot(pos);
-    if (posSpot !== "box")
+    if (posSpot !== "[" && posSpot != "]")
       return set;
 
     const isNew = !set.has(pos.key);
@@ -159,9 +176,9 @@ class Board {
   }
 
   print() {
-    for (let y = 0; y < this.width; y++) {
+    for (let y = 0; y < this.height; y++) {
       const spotTexts: string[] = this.spots[y].map((s) =>
-        s === "wall" ? "#" : s === "box" ? "O" : "."
+        s === "wall" ? "#" : s === "empty" ? "." : s
       );
       if (this.robotPos.y === y) {
         spotTexts[this.robotPos.x] = "@";
@@ -177,9 +194,10 @@ class Board {
 
   get boxScore(): number {
     let sum = 0;
-    for (let y = 0; y < this.width; y++) {
-      for (let x = 0; x < this.height; x++) {
-        if (this.spots[y][x] === "box") {
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const spot = this.spots[y][x];
+        if (spot === "[" || spot === "]") {
           sum += y * 100 + x;
         }
       }
@@ -190,10 +208,30 @@ class Board {
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("input");
+  const text = await Deno.readTextFile("example");
   const parts = text.split("\n\n");
   const boardLines = parts[0].split("\n");
-  const board = new Board(boardLines);
+  const extendedBoardLines = boardLines.map(line => {
+    return line.split("").map(t => {
+      if (t === "#")
+        return "##";
+      if (t === "O")
+        return "[]";
+      if (t === ".")
+        return "..";
+      if (t === "@")
+        return "@.";
+
+      throw new Error(`Unexpected: ${t}`);
+    }).join("");
+  })
+
+  for (const line of extendedBoardLines) {
+    console.log(line);
+  }
+
+
+  const board = new Board(extendedBoardLines);
 
   board.print();
 
