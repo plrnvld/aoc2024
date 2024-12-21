@@ -68,7 +68,6 @@ class Board {
       this.spots.push(Array(this.width).fill("empty"));
 
       for (let x = 0; x < this.width; x++) {
-        console.log(` > Trying to read ${x},${y}`);
         const c = boardLines[y][x];
 
         if (c === "@") {
@@ -145,10 +144,12 @@ class Board {
 
     this.addToBoxSet(boxPos, move, set);
     const boxSpot = this.getSpot(boxPos);
-    if (boxSpot === "[")
+    if (boxSpot === "[") {
       this.addToBoxSet(boxPos.add(1, 0), move, set);
-      if (boxSpot === "]")
-        this.addToBoxSet(boxPos.add(-1, 0), move, set);
+    }
+    if (boxSpot === "]") {
+      this.addToBoxSet(boxPos.add(-1, 0), move, set);
+    }
 
     return set;
   }
@@ -172,10 +173,10 @@ class Board {
   }
 
   nextBoxPosList(pos: Pos, move: Move): Pos[] {
-    // ###### 
     const [dx, dy] = moveDelta(move);
     const nextPos = pos.add(dx, dy);
     const nextSpot = this.getSpot(nextPos);
+
     return nextSpot === "]"
       ? [nextPos.add(-1, 0), nextPos]
       : nextSpot === "["
@@ -196,6 +197,7 @@ class Board {
       const spotTexts: string[] = this.spots[y].map((s) =>
         s === "wall" ? "#" : s === "empty" ? "." : s
       );
+
       if (this.robotPos.y === y) {
         spotTexts[this.robotPos.x] = "@";
       }
@@ -223,48 +225,53 @@ class Board {
   }
 }
 
+function expandMapChar(t: string): string {
+  if (t === "#") {
+    return "##";
+  }
+  if (t === "O") {
+    return "[]";
+  }
+  if (t === ".") {
+    return "..";
+  }
+  if (t === "@") {
+    return "@.";
+  }
+
+  throw new Error(`Unexpected: ${t}`);
+}
+
+function readMoves(line: string): Move[] {
+  return line.split("").filter((t) => t !== "\n").map((t) => t as Move);
+}
+
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const parts = text.split("\n\n");
   const boardLines = parts[0].split("\n");
-  const extendedBoardLines = boardLines.map((line) => {
-    return line.split("").map((t) => {
-      if (t === "#") {
-        return "##";
-      }
-      if (t === "O") {
-        return "[]";
-      }
-      if (t === ".") {
-        return "..";
-      }
-      if (t === "@") {
-        return "@.";
-      }
-
-      throw new Error(`Unexpected: ${t}`);
-    }).join("");
+  const expandedBoardLines = boardLines.map((line) => {
+    return line.split("").map((t) => expandMapChar(t)).join("");
   });
 
-  for (const line of extendedBoardLines) {
+  for (const line of expandedBoardLines) {
     console.log(line);
   }
 
-  const board = new Board(extendedBoardLines);
+  const board = new Board(expandedBoardLines);
 
   board.print();
 
   console.log("\n*******\n");
 
-  const moves: Move[] = parts[1].split("").filter((t) => t !== "\n").map((t) =>
-    t as Move
-  );
+  const moves: Move[] = readMoves(parts[1]);
 
   for (const m of moves) {
     board.executeMove(m);
   }
 
   board.print();
+
   console.log(board.boxScore);
 }
 
