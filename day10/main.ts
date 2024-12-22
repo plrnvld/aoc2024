@@ -129,7 +129,7 @@ function countTrailsFrom(
   }
 
   const nextLevel = level + 1;
-  
+
   if (levelSet.has(left.key)) {
     trailCount += countTrailsFrom(nextLevel, left, setList);
   }
@@ -142,7 +142,7 @@ function countTrailsFrom(
   if (down && levelSet.has(down.key)) {
     trailCount += countTrailsFrom(nextLevel, down, setList);
   }
-  
+
   return trailCount;
 }
 
@@ -192,8 +192,8 @@ if (import.meta.main) {
   let trailCount = 0;
   for (const zeroPos of map.zeroes) {
     const findNineSetList = findNines(zeroPos, map);
-    
-    console.log(findNineSetList)
+
+    console.log(findNineSetList);
 
     const addedTrails = countTrails(zeroPos, findNineSetList);
 

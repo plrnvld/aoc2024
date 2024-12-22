@@ -1,4 +1,4 @@
-const numberCount: { [key: number] : number; } = {}; 
+const numberCount: { [key: number]: number } = {};
 
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
@@ -11,7 +11,7 @@ if (import.meta.main) {
     const parts = line.split(" ");
     left[index] = parseInt(parts[0]);
     right[index] = parseInt(parts[3]);
-    
+
     index++;
   }
 
@@ -22,7 +22,7 @@ if (import.meta.main) {
       numberCount[rNum] = 1;
     }
   }
-  
+
   let similarity = 0;
 
   for (let i = 0; i < 1000; i++) {
