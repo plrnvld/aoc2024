@@ -28,11 +28,13 @@ class Graph {
   neighborsMap: Map<number, number[]> = new Map();
   startVertexId: number = -1;
   targetVertexIds: number[] = [];
+  roadBlockVertex: number = -1;
 
-  constructor(lines: string[]) {
+  constructor(lines: string[], roadBlockVertex: number = -1) {
     this.lines = lines;
     this.mapWidth = lines[0].length;
     this.mapHeight = lines.length;
+    this.roadBlockVertex = roadBlockVertex;
 
     const numVerticesHor = (this.mapWidth - 1) / 2;
     const numVerticesVer = (this.mapHeight - 1) / 2;
@@ -66,8 +68,6 @@ class Graph {
         if (hasPathUp || hasPathDown) {
           createdVertices.push(this.addNewVertex(x, y, "upDown"));
         }
-
-        
 
         if (c === "E") {
           createdVertices.forEach((v) => this.targetVertexIds.push(v.id));
@@ -108,8 +108,6 @@ class Graph {
         if (createdVertices.length === 2) {
           this.setDist(createdVertices[0].id, createdVertices[1].id, 1000);
           this.addNeighbors(createdVertices[0].id, createdVertices[1].id);
-        } else {
-          // console.log(`--> No two edges for ${x},${y}`);
         }
       }
     }
@@ -215,10 +213,6 @@ function dijkstra(graph: Graph, startId: number, targetId: number): number {
     const neighbors = graph.neighbors(uId);
     const u = graph.getVertex(uId);
 
-    if (u.id === targetId) {
-      return u.dist;
-    }
-
     for (const neighborId of neighbors) {
       const neighborDist = graph.getDist(uId, neighborId);
       if (neighborDist === undefined) {
@@ -234,7 +228,21 @@ function dijkstra(graph: Graph, startId: number, targetId: number): number {
     }
   }
 
-  throw new Error("Dijkstra didn't terminate");
+  return graph.getVertex(targetId).dist;
+}
+
+function getPath(dijkstradedGraph: Graph, targetId: number): Vertex[] {
+  const targetVertex = dijkstradedGraph.getVertex(targetId);
+  let curr = targetVertex;
+
+  const reversedPath: Vertex[] = [];
+  while (curr.prev !== undefined) {
+    reversedPath.push(curr);
+    curr = curr.prev;
+  }
+
+  reversedPath.push(curr);
+  return reversedPath.toReversed();
 }
 
 if (import.meta.main) {
@@ -242,11 +250,28 @@ if (import.meta.main) {
   const lines = text.split("\n");
   const graph = new Graph(lines);
 
+  let minCost = Number.MAX_SAFE_INTEGER;
+  let bestPath: Vertex[] = [];
   console.log(`Calculating for ${graph.targetVertexIds.length} target(s)`);
   for (const targetId of graph.targetVertexIds) {
     const cost = dijkstra(graph, graph.startVertexId, targetId);
-    console.log("* Cost: " + cost);
+
+    if (cost < minCost) {
+      minCost = cost;
+      bestPath = getPath(graph, targetId);
+    }
+
+    console.log("- Cost: " + cost);
   }
 
-  console.log(graph.vertices.length);
+  console.log();
+
+  console.log(">> Path length is " + bestPath.length);
+  for (const p of bestPath) {
+    console.log(`Vertex ${p.id} at (${p.x},${p.y})`);
+  }
+
+  console.log();
+
+  console.log(minCost);
 }
