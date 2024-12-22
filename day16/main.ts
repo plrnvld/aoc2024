@@ -220,6 +220,9 @@ function dijkstra(graph: Graph, startId: number, targetId: number): number {
     const neighbors = graph.neighbors(uId);
     const u = graph.getVertex(uId);
 
+    if (u.id === targetId)
+      return u.dist;
+    
     for (const neighborId of neighbors) {
       const neighborDist = graph.getDist(uId, neighborId);
       if (neighborDist === undefined) {
@@ -252,8 +255,32 @@ function getPath(dijkstradedGraph: Graph, targetId: number): Vertex[] {
   return reversedPath.toReversed();
 }
 
+function pathToPositionKeys(path: Vertex[]): number[] {
+  const keys: number[] = [];
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const vertex1 = path[i];
+    const vertex2 = path[i + 1];
+
+    const middleX = (vertex1.x + vertex2.x)/2;
+    const middleY = (vertex1.y + vertex2.y)/2;
+
+    keys.push(positionToKey(vertex1.x, vertex1.y));
+    keys.push(positionToKey(middleX, middleY));
+  }
+
+  const lastVertex = path.at(-1)!;
+  keys.push(positionToKey(lastVertex.x, lastVertex.y));
+
+  return keys;
+}
+
+function positionToKey(x: number, y: number): number {
+  return x * 1000 + y;
+}
+
 if (import.meta.main) {
-  const text = await Deno.readTextFile("example");
+  const text = await Deno.readTextFile("input");
   const lines = text.split("\n");
   const graph = new Graph(lines);
 
@@ -275,44 +302,36 @@ if (import.meta.main) {
 
   console.log();
 
-  console.log(">> Path length is " + bestPath.length);
-  for (const p of bestPath) {
-    console.log(`Vertex ${p.id} at (${p.x},${p.y})`);
-  }
-
-  console.log()
-
-  console.log();
-
   const bestPlaces: Set<number> = new Set();
-  const roadBlockQueue: number[] = [];
 
-  for (const p of bestPath) {
-    bestPlaces.add(p.id);
-    roadBlockQueue.push(p.id);
+  for (const key of pathToPositionKeys(bestPath)) {
+    bestPlaces.add(key);
   }
 
-  while (roadBlockQueue.length > 0) {
-    const roadblockId = roadBlockQueue.pop()!;
-    console.log(" >> Checking best path with roadblock " + roadblockId);
-    
-    graph.roadBlockVertexId = roadblockId;
-    const costWithRoadblock = dijkstra(graph, graph.startVertexId, bestTargetId);
+  const detourVertices = graph.vertices.filter(v => {
+    return v.id !== graph.startVertexId && v.id !== bestTargetId; 
+  });
 
-    if (costWithRoadblock === minCost) {
-      console.log(">>>> Found alternative path");
-      const newPath = getPath(graph, bestTargetId);
+  console.log(`Checking ${detourVertices.length} detours...`);
 
-      for (const newPathVertex of newPath) {
-        if (!bestPlaces.has(newPathVertex.id)) {
-          bestPlaces.add(newPathVertex.id);
-          roadBlockQueue.push(newPathVertex.id);
-        }
-      }
+  let i = 0;
+  for (const detourVertex of detourVertices) {
+    if (i % 10 === 0) {
+      console.log(`> detour ${i}`);
+    }
+    i++;
+
+    const costToDetour = dijkstra(graph, graph.startVertexId, detourVertex.id);
+    const toDetourPath = getPath(graph, detourVertex.id);
+    const costToEnd = dijkstra(graph, detourVertex.id, bestTargetId);
+    const toEndPath = getPath(graph, bestTargetId);
+
+    if (costToDetour + costToEnd === minCost) {
+      pathToPositionKeys(toDetourPath).forEach(key => bestPlaces.add(key));
+      pathToPositionKeys(toEndPath).forEach(key => bestPlaces.add(key));
     }
   }
-
-  console.log("\n\nChecked with all roadblocks");
+  
   console.log(bestPlaces.size);
 }
 
