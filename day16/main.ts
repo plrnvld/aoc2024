@@ -28,14 +28,13 @@ class Graph {
   neighborsMap: Map<number, number[]> = new Map();
   startVertexId: number = -1;
   targetVertexIds: number[] = [];
-  roadBlockVertex: number = -1;
+  roadBlockVertexId: number = -1;
 
-  constructor(lines: string[], roadBlockVertex: number = -1) {
+  constructor(lines: string[]) {
     this.lines = lines;
     this.mapWidth = lines[0].length;
     this.mapHeight = lines.length;
-    this.roadBlockVertex = roadBlockVertex;
-
+    
     const numVerticesHor = (this.mapWidth - 1) / 2;
     const numVerticesVer = (this.mapHeight - 1) / 2;
 
@@ -153,8 +152,12 @@ class Graph {
     return this.lines[y][x];
   }
 
-  getDist(fromVertexId: number, to: number): number | undefined {
-    return this.costMap.get(this.getEdgeId(fromVertexId, to));
+  getDist(fromVertexId: number, toVertexId: number): number | undefined {
+    if (this.roadBlockVertexId !== -1 && 
+      (fromVertexId === this.roadBlockVertexId || toVertexId === this.roadBlockVertexId))
+      return 10000000;
+
+    return this.costMap.get(this.getEdgeId(fromVertexId, toVertexId));
   }
 
   getVertex(id: number): Vertex {
@@ -174,7 +177,7 @@ class Graph {
     const lowestId = Math.min(fromVertexId, toVertexId);
     const highestId = Math.max(fromVertexId, toVertexId);
 
-    return lowestId * 1000 + highestId;
+    return lowestId * 1000000 + highestId;
   }
 
   neighbors(vertexId: number): number[] {
@@ -189,7 +192,11 @@ class Graph {
 
 function dijkstra(graph: Graph, startId: number, targetId: number): number {
   const queue: number[] = [];
-  graph.vertices.forEach((v) => queue.push(v.id));
+  graph.vertices.forEach((v) => {
+    queue.push(v.id);
+    v.dist = Number.MAX_SAFE_INTEGER;
+    v.prev = undefined;
+  });
   const startVertex = graph.getVertex(startId);
   startVertex.dist = 0;
 
@@ -246,12 +253,13 @@ function getPath(dijkstradedGraph: Graph, targetId: number): Vertex[] {
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("input");
+  const text = await Deno.readTextFile("example");
   const lines = text.split("\n");
   const graph = new Graph(lines);
 
   let minCost = Number.MAX_SAFE_INTEGER;
   let bestPath: Vertex[] = [];
+  let bestTargetId: number = -1;
   console.log(`Calculating for ${graph.targetVertexIds.length} target(s)`);
   for (const targetId of graph.targetVertexIds) {
     const cost = dijkstra(graph, graph.startVertexId, targetId);
@@ -259,6 +267,7 @@ if (import.meta.main) {
     if (cost < minCost) {
       minCost = cost;
       bestPath = getPath(graph, targetId);
+      bestTargetId = targetId;
     }
 
     console.log("- Cost: " + cost);
@@ -271,7 +280,40 @@ if (import.meta.main) {
     console.log(`Vertex ${p.id} at (${p.x},${p.y})`);
   }
 
+  console.log()
+
   console.log();
 
-  console.log(minCost);
+  const bestPlaces: Set<number> = new Set();
+  const roadBlockQueue: number[] = [];
+
+  for (const p of bestPath) {
+    bestPlaces.add(p.id);
+    roadBlockQueue.push(p.id);
+  }
+
+  while (roadBlockQueue.length > 0) {
+    const roadblockId = roadBlockQueue.pop()!;
+    console.log(" >> Checking best path with roadblock " + roadblockId);
+    
+    graph.roadBlockVertexId = roadblockId;
+    const costWithRoadblock = dijkstra(graph, graph.startVertexId, bestTargetId);
+
+    if (costWithRoadblock === minCost) {
+      console.log(">>>> Found alternative path");
+      const newPath = getPath(graph, bestTargetId);
+
+      for (const newPathVertex of newPath) {
+        if (!bestPlaces.has(newPathVertex.id)) {
+          bestPlaces.add(newPathVertex.id);
+          roadBlockQueue.push(newPathVertex.id);
+        }
+      }
+    }
+  }
+
+  console.log("\n\nChecked with all roadblocks");
+  console.log(bestPlaces.size);
 }
+
+// 319 too low
