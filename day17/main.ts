@@ -54,6 +54,14 @@ class Program {
   }
 }
 
+export function modulo(num: number, wrap: number) {
+  if (num < 0) {
+    return (wrap + (num % wrap)) % wrap;
+  }
+
+  return num % wrap;
+}
+
 if (import.meta.main) {
   const text = await Deno.readTextFile("example");
   const parts = text.split("\n\n");
