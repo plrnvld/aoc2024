@@ -16,9 +16,11 @@ class Registers {
 
 class Program {
   instructions: number[];
+  output: number[];
 
   constructor(programLine: string) {
     this.instructions = programLine.split(" ")[1].split(",").map(t => parseInt(t));
+    this.output = [];
   }
 
   adv(combo: number) { // truncated( A / 2^combo ) --> A
