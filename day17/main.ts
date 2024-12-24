@@ -20,6 +20,38 @@ class Program {
   constructor(programLine: string) {
     this.instructions = programLine.split(" ")[1].split(",").map(t => parseInt(t));
   }
+
+  adv(combo: number) { // truncated( A / 2^combo ) --> A
+    // ###
+  }
+
+  bxl(combo: number) { // B `xor` literal --> B
+    // ###
+  }
+
+  bst(combo: number) { // combo `modulo` 8 --> B
+    // ###
+  }
+
+  jnz(combo: number) { // if (A == 2) then nothing, else jump to literal, if it jumps, dont increase pointer
+    // ###
+  }
+
+  bxc(combo: number) { // B `xor` C --> B (ignore operand)
+    // ###
+  }
+
+  out(combo: number) { // combo `modulo` 8 --> output (multiple outputs separated by comma's)
+    // ###
+  }
+
+  bdv(combo: number) { // truncated( A / 2^combo ) --> B
+    // ###
+  }
+
+  cdv(combo: number) { // truncated( A / 2^combo ) --> C
+    // ###
+  }
 }
 
 if (import.meta.main) {
