@@ -84,6 +84,9 @@ class Program {
   // Opcode 1
   bxl(literal: number) { // B `xor` literal --> B
     const result = this.registers.b ^ literal;
+
+    console.log(`  > BXL: ${this.registers.b} (#${this.registers.b.toString(2)}) xor ${literal} (#${literal.toString(2)}) => B = ${result} (#${result.toString(2)})`);
+
     this.registers.b = result;
   }
 
@@ -109,6 +112,9 @@ class Program {
   // Opcode 4
   bxc(_: number) { // B `xor` C --> B (ignore operand)
     const result = this.registers.b ^ this.registers.c;
+
+    console.log(`  > BXC: ${this.registers.b} (#${this.registers.b.toString(2)}) xor ${this.registers.c} (#${this.registers.c.toString(2)}) => B = ${result} (#${result.toString(2)})`);
+
     this.registers.b = result;
   }
 
@@ -195,8 +201,8 @@ if (import.meta.main) {
   const registerLines = parts[0].split("\n");
   const programLine = parts[1];
 
-  const overwriteA = Math.pow(8, 15) + 6 + 8*0 + Math.pow(8, 3);
-  console.log("A => " + overwriteA);
+  const overwriteA = Math.pow(8, 15) + 6 + 64*5;
+  console.log("A => " + overwriteA + "binary=#" + overwriteA.toString(2));
   const registers = new Registers(registerLines);
 
   const program = new Program(programLine, registers, overwriteA);
