@@ -173,9 +173,13 @@ if (import.meta.main) {
   const registerLines = parts[0].split("\n");
   const programLine = parts[1];
 
-  const overwriteA = 35184372088832;
+  const overwriteA = Math.pow(8, 15) + 6 + 64 * 5;
+  console.log("A => " + overwriteA);
   const registers = new Registers(registerLines);
+
   const program = new Program(programLine, registers, overwriteA);
+
+  console.log(registers);
 
   while (program.executeInstruction());
 
@@ -187,17 +191,23 @@ if (import.meta.main) {
   // 2,4,1,1,7,5,1,5,0,3,4,3,5,5,3,0 
   // (the answer outputs 16 values)
 
-  // (2) bst 'register A % 8 --> B'
-  // (1) bxl 'literal 1: register B `xor` 000000001 --> B'
-  // (7) cdv 'register B: truncated(A / 2^register B) --> C'
-  // (1) bxl 'literal 5: register B `xor` 000000101 --> B'
+  // (2) bst 'register A `modulo` 8 --> B' (B will be between 0 and 7)
+  // (1) bxl 'literal 1: register B `xor` 000000001 --> B' (0 -> 1, 1 -> 0, 2 -> 3, 3 -> 2, 4 -> 5, 5 -> 4, 6 -> 7, 7 -> 6)
+  // (7) cdv 'register B: truncated(A / 2^register B) --> C' (most of the time when A is big this will be a power of 4, so ending in zeroes)
+  // (1) bxl 'literal 5: register B `xor` 000000101 --> B' (0 -> 5, 1 -> 4, 2 -> 7, 3 -> 6, 4 -> 1, 5 -> 0, 6 -> 3, 7 -> 2)
 
-  // (0) adv 'literal 3' (always divides by 8): 'truncated(register A / 8) --> A'
+  // (0) adv 'literal 3' (always divides by 8): 'truncated(register A / 8) --> A' (divide the A counter by 8)
 
-  // (4) bxc 'ignores 3': register B `xor` register C --> B
-  // (5) out 'register B % 8': output register B `modulo` 8
+  // (4) bxc 'ignores 3': register B `xor` register C --> B (Most of the time, when A is big, C ends in zeroes, then `xor` does nothing)
+  // (5) out 'register B `modulo` 8': output register B `modulo` 8 (B is always smaller than 8, it will just output B)
 
   // (3) jnz 'literal 0 if A != 0': start over when A is not 0
-}
 
-// 4,1,5,3,1,5,3,5,7 the right answer
+  // (1) bxl 'literal 1: register B `xor` 000000001 --> B' (0 -> 1, 1 -> 0, 2 -> 3, 3 -> 2, 4 -> 5, 5 -> 4, 6 -> 7, 7 -> 6)
+  // (1) bxl 'literal 5: register B `xor` 000000101 --> B' (0 -> 5, 1 -> 4, 2 -> 7, 3 -> 6, 4 -> 1, 5 -> 0, 6 -> 3, 7 -> 2)
+
+  // Combined (0 -> 4) (1 -> 5) (2 -> 6) (3 -> 7) (4 -> 0) (5 -> 1) (6 -> 2) (7 -> 3)
+
+
+
+}
