@@ -20,19 +20,21 @@ class Program {
   pointer: number;
   registers: Registers;
 
-  constructor(programLine: string, registers: Registers) {
+  constructor(programLine: string, registers: Registers, overwriteA: number) {
     this.instructions = programLine.split(" ")[1].split(",").map((t) =>
       parseInt(t)
     );
 
     this.registers = registers;
+    this.registers.a = overwriteA;
 
     this.output = [];
     this.pointer = 0;
   }
 
   executeInstruction(): boolean {
-    const canContinue = this.pointer < this.instructions.length && this.pointer >= 0;
+    const canContinue = this.pointer < this.instructions.length &&
+      this.pointer >= 0;
     if (!canContinue) {
       return false;
     }
@@ -59,7 +61,7 @@ class Program {
     } else if (opCode === 7) {
       this.cdv(operand);
     } else {
-      throw new Error("Unrecognized operand " + operand)
+      throw new Error("Unrecognized operand " + operand);
     }
 
     if (changedPointer !== undefined) {
@@ -73,7 +75,9 @@ class Program {
 
   // Opcode 0
   adv(combo: number) { // truncated( A / 2^combo ) --> A
-    const result = Math.trunc(this.registers.a / Math.pow(2, this.getComboValue(combo)));
+    const result = Math.trunc(
+      this.registers.a / Math.pow(2, this.getComboValue(combo)),
+    );
     this.registers.a = result;
   }
 
@@ -91,11 +95,13 @@ class Program {
 
   // Opcode 3
   jnz(literal: number): number | undefined { // if (A == 0) then nothing, else jump to literal, if it jumps, dont increase pointer
-    if (this.registers.a === 0)
+    if (this.registers.a === 0) {
       return undefined;
+    }
 
-    if (literal === this.pointer)
+    if (literal === this.pointer) {
       return undefined;
+    }
 
     return literal;
   }
@@ -114,28 +120,36 @@ class Program {
 
   // Opcode 6
   bdv(combo: number) { // truncated( A / 2^combo ) --> B
-    const result = Math.trunc(this.registers.a / Math.pow(2, this.getComboValue(combo)));
+    const result = Math.trunc(
+      this.registers.a / Math.pow(2, this.getComboValue(combo)),
+    );
     this.registers.b = result;
   }
 
   // Opcode 7
   cdv(combo: number) { // truncated( A / 2^combo ) --> C
-    const result = Math.trunc(this.registers.a / Math.pow(2, this.getComboValue(combo)));
+    const result = Math.trunc(
+      this.registers.a / Math.pow(2, this.getComboValue(combo)),
+    );
     this.registers.c = result;
   }
 
   getComboValue(combo: number): number {
-    if (combo >= 0 && combo <= 3)
+    if (combo >= 0 && combo <= 3) {
       return combo;
+    }
 
-    if (combo === 4)
+    if (combo === 4) {
       return this.registers.a;
+    }
 
-    if (combo === 5)
+    if (combo === 5) {
       return this.registers.b;
+    }
 
-    if (combo === 6)
+    if (combo === 6) {
       return this.registers.c;
+    }
 
     throw new Error("Unrecognized combo " + combo);
   }
@@ -159,16 +173,31 @@ if (import.meta.main) {
   const registerLines = parts[0].split("\n");
   const programLine = parts[1];
 
+  const overwriteA = 35184372088832;
   const registers = new Registers(registerLines);
-  const program = new Program(programLine, registers);
+  const program = new Program(programLine, registers, overwriteA);
 
-  while (program.executeInstruction()) {
-    // Run run run
-  }
+  while (program.executeInstruction());
 
   console.log(registers);
 
   program.printOutput();
+
+  // Input to aim for
+  // 2,4,1,1,7,5,1,5,0,3,4,3,5,5,3,0 
+  // (the answer outputs 16 values)
+
+  // (2) bst 'register A % 8 --> B'
+  // (1) bxl 'literal 1: register B `xor` 000000001 --> B'
+  // (7) cdv 'register B: truncated(A / 2^register B) --> C'
+  // (1) bxl 'literal 5: register B `xor` 000000101 --> B'
+
+  // (0) adv 'literal 3' (always divides by 8): 'truncated(register A / 8) --> A'
+
+  // (4) bxc 'ignores 3': register B `xor` register C --> B
+  // (5) out 'register B % 8': output register B `modulo` 8
+
+  // (3) jnz 'literal 0 if A != 0': start over when A is not 0
 }
 
 // 4,1,5,3,1,5,3,5,7 the right answer
