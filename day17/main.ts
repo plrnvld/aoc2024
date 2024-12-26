@@ -20,7 +20,11 @@ class Program {
   pointer: number;
   registers: Registers;
 
-  constructor(instructions: number[], registers: Registers, overwriteA: number) {
+  constructor(
+    instructions: number[],
+    registers: Registers,
+    overwriteA: number,
+  ) {
     this.instructions = instructions;
 
     this.registers = registers;
@@ -31,7 +35,7 @@ class Program {
   }
 
   executeAllInstructions() {
-    while(this.executeInstruction());
+    while (this.executeInstruction());
   }
 
   executeInstruction(): boolean {
@@ -226,21 +230,24 @@ class Program {
 
   matchesOutput(expected: number[], numToMatch: number): boolean {
     for (let i = 0; i < numToMatch; i++) {
-      if (this.output[i] !== expected[i])
+      if (this.output[i] !== expected[i]) {
         return false;
+      }
     }
 
     return true;
   }
 
   matchesOutputLast(expected: number[], numToMatch: number): boolean {
-    if (expected.length !== this.output.length)
-      return false;    
+    if (expected.length !== this.output.length) {
+      return false;
+    }
 
     for (let i = 0; i < numToMatch; i++) {
       const posToMatch = expected.length - numToMatch;
-      if (this.output[posToMatch] !== expected[posToMatch])
+      if (this.output[posToMatch] !== expected[posToMatch]) {
         return false;
+      }
     }
 
     return true;
@@ -259,6 +266,54 @@ export function modulo(num: number, wrap: number) {
   return num % wrap;
 }
 
+class PartialA {
+  registerABytes: number[];
+  filled: number;
+
+  constructor(registerABytes: number[], filled: number) {
+    this.registerABytes = registerABytes;
+    this.filled = filled;
+  }
+
+  expandAnswers(): PartialA[] {
+    const expanded: PartialA[] = [];
+
+    const nextFilled = this.filled + 1;
+
+    for (let left = 0; left < 8; left++) {
+      for (let right = 0; right < 8; right++) {
+
+        const bytes = [...this.registerABytes];
+        bytes[nextFilled] = left;
+        bytes[bytes.length - 1 - nextFilled] = right;
+
+        expanded.push(new PartialA(bytes, nextFilled));
+      }
+    }
+
+    return expanded;
+  }
+
+  calcRegister():number {
+    let result = 0;
+    let base = 1;
+
+    for (let i = 0; i < this.registerABytes.length; i++) {
+      const byte = this.registerABytes[this.registerABytes.length - 1 - i];
+      if (byte !== undefined)
+        result += base * byte;
+
+      base *= 16;
+    }
+
+    return result;
+  }
+
+  static newPartialAnser() {
+    return new PartialA(Array(16), 0);
+  }
+}
+
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const parts = text.split("\n\n");
@@ -274,19 +329,18 @@ if (import.meta.main) {
 
   const answer8Powers: number[] = [];
   let fixedNum: number = 0;
-  
+
   for (let i = 0; i < 16; i++) {
-    
-    
     const positionsToMatch = i + 1;
 
     let matchesPositions = false;
 
     const answersFoundThisRound = [];
 
+    const potentialAnswers: number[][] = [];
+
     const baseNum = Math.pow(8, 15 - i);
     for (let numberToTry = 0; numberToTry < 8; numberToTry++) {
-      
       const attempt = numberToTry * baseNum;
 
       const overwriteA = fixedNum + attempt;
@@ -295,13 +349,15 @@ if (import.meta.main) {
 
       program.executeAllInstructions();
 
-      console.log(`> Position ${positionsToMatch}: trying ${numberToTry}, outcome ${program.output}`);
+      console.log(
+        `> Position ${positionsToMatch}: trying ${numberToTry}, outcome ${program.output}`,
+      );
 
       if (program.matchesOutputLast(expectedAnswer, positionsToMatch)) {
         // fixedNum += attempt;
         // answer8Powers.push(numberToTry);
         answersFoundThisRound.push(numberToTry);
-        
+
         matchesPositions = true;
       }
     }
@@ -312,6 +368,7 @@ if (import.meta.main) {
       const firstAnswer = answersFoundThisRound.at(0);
       const secondAnswer = answersFoundThisRound.at(1);
       const thirdAnswer = answersFoundThisRound.at(2);
+      const fourthAnswer = answersFoundThisRound.at(3);
       const lastAnswer = answersFoundThisRound.at(-1)!;
 
       let answerToPick = lastAnswer;
@@ -321,32 +378,51 @@ if (import.meta.main) {
       }
 
       if (positionsToMatch === 6) {
-        answerToPick = lastAnswer!;
+        answerToPick = firstAnswer!;
       }
 
-      if (positionsToMatch === 10) {
+      if (positionsToMatch === 9) {
+        answerToPick = firstAnswer!;
+      }
+
+      if (positionsToMatch === 11) {
+        answerToPick = firstAnswer!;
+      }
+
+      if (positionsToMatch === 12) { //
         answerToPick = secondAnswer!;
       }
 
-      if (positionsToMatch === 14) {
+      if (positionsToMatch === 15) { //
         answerToPick = firstAnswer!;
       }
 
       fixedNum += answerToPick * baseNum;
       answer8Powers.push(answerToPick);
 
-
-      console.log(`%c Matching ...${expectedAnswer.slice(expectedAnswer.length - positionsToMatch)}]: answer ${answer8Powers.at(-1)} worked!`, "background-color: green");
+      if (expectedAnswer.length === positionsToMatch) {
+        console.log(
+          `%c Matching [${
+            expectedAnswer.slice(expectedAnswer.length - positionsToMatch)
+          }]: answer ${answer8Powers.at(-1)} worked!`,
+          "background-color: green",
+        );
+      } else {
+        console.log(
+          `%c Matching ...${
+            expectedAnswer.slice(expectedAnswer.length - positionsToMatch)
+          }]: answer ${answer8Powers.at(-1)} worked!`,
+          "background-color: green",
+        );
+      }
       console.log();
-        
-    }
-     else 
+    } else {
       throw new Error("Cannot continue");
+    }
   }
 
   console.log(fixedNum);
-  
-  
+
   // Input to aim for
   // 2,4,1,1,7,5,1,5,0,3,4,3,5,5,3,0
   // (the answer outputs 16 values)
@@ -371,8 +447,9 @@ if (import.meta.main) {
   // Combined (0 -> 4) (1 -> 5) (2 -> 6) (3 -> 7) (4 -> 0) (5 -> 1) (6 -> 2) (7 -> 3)
 }
 
-
 // 164542234324925 too high
 // 164545346498493 too high
 // 164545346498493
+// 164545346498493
 // 164545346498237 too high
+// 164545346498237
