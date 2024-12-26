@@ -20,16 +20,18 @@ class Program {
   pointer: number;
   registers: Registers;
 
-  constructor(programLine: string, registers: Registers, overwriteA: number) {
-    this.instructions = programLine.split(" ")[1].split(",").map((t) =>
-      parseInt(t)
-    );
+  constructor(instructions: number[], registers: Registers, overwriteA: number) {
+    this.instructions = instructions;
 
     this.registers = registers;
     this.registers.a = overwriteA;
 
     this.output = [];
     this.pointer = 0;
+  }
+
+  executeAllInstructions() {
+    while(this.executeInstruction());
   }
 
   executeInstruction(): boolean {
@@ -85,7 +87,13 @@ class Program {
   bxl(literal: number) { // B `xor` literal --> B
     const result = this.registers.b ^ literal;
 
-    console.log(`  > BXL: ${this.registers.b} (#${this.registers.b.toString(2)}) xor ${literal} (#${literal.toString(2)}) => B = ${result} (#${result.toString(2)})`);
+    // console.log(
+    //   `  > BXL: ${this.registers.b} (#${
+    //     this.registers.b.toString(2)
+    //   }) XOR ${literal} (#${literal.toString(2)}) => B = ${result} (#${
+    //     result.toString(2)
+    //   })`,
+    // );
 
     this.registers.b = result;
   }
@@ -93,6 +101,13 @@ class Program {
   // Opcode 2
   bst(combo: number) { // combo `modulo` 8 --> B
     const result = modulo(this.getComboValue(combo), 8);
+
+    // console.log(
+    //   `  > BST: ${
+    //     this.getComboValueDescription(combo)
+    //   } % 8 => B = ${result} (#${result.toString(2)})`,
+    // );
+
     this.registers.b = result;
   }
 
@@ -113,7 +128,13 @@ class Program {
   bxc(_: number) { // B `xor` C --> B (ignore operand)
     const result = this.registers.b ^ this.registers.c;
 
-    console.log(`  > BXC: ${this.registers.b} (#${this.registers.b.toString(2)}) xor ${this.registers.c} (#${this.registers.c.toString(2)}) => B = ${result} (#${result.toString(2)})`);
+    // console.log(
+    //   `  > BXC: register B ${this.registers.b} (#${
+    //     this.registers.b.toString(2)
+    //   }) XOR register C ${this.registers.c} (#${
+    //     this.registers.c.toString(2)
+    //   }) => B = ${result} (#${result.toString(2)})`,
+    // );
 
     this.registers.b = result;
   }
@@ -122,7 +143,12 @@ class Program {
   out(combo: number) { // combo `modulo` 8 --> output (multiple outputs separated by comma's)
     const result = modulo(this.getComboValue(combo), 8);
 
-    console.log(` > Outputting from: ${this.getComboValueDescription(combo)} % 8 = ${result}`);
+    // console.log(
+    //   ` > Outputting from: ${
+    //     this.getComboValueDescription(combo)
+    //   } % 8 = ${result}\n`,
+    // );
+
     this.output.push(result);
   }
 
@@ -139,6 +165,15 @@ class Program {
     const result = Math.trunc(
       this.registers.a / Math.pow(2, this.getComboValue(combo)),
     );
+
+    // console.log(
+    //   `    > CDV: trunc(register A ${this.registers.a} (#${
+    //     this.registers.a.toString(2)
+    //   }) / 2^${this.getComboValueDescription(combo)}) => C = ${result} (% #${
+    //     (result % 8).toString(2)
+    //   })`,
+    // );
+
     this.registers.c = result;
   }
 
@@ -164,19 +199,22 @@ class Program {
 
   getComboValueDescription(combo: number): string {
     if (combo >= 0 && combo <= 3) {
-      return "literal value " + combo;;
+      return "literal value " + combo;
     }
 
     if (combo === 4) {
-      return "register A (" + this.registers.a + ", #" + this.registers.a.toString(2) + ")";
+      return "register A (" + this.registers.a + ", #" +
+        asBinary(this.registers.a) + ")";
     }
 
     if (combo === 5) {
-      return "register B (" + this.registers.b + ", #" + this.registers.b.toString(2) + ")";
+      return "register B (" + this.registers.b + ", #" +
+        asBinary(this.registers.b) + ")";
     }
 
     if (combo === 6) {
-      return "register C (" + this.registers.c + ", #" + this.registers.c.toString(2) + ")";
+      return "register C (" + this.registers.c + ", #" +
+        asBinary(this.registers.c) + ")";
     }
 
     throw new Error("Unrecognized combo " + combo);
@@ -185,6 +223,32 @@ class Program {
   printOutput() {
     console.log(this.output);
   }
+
+  matchesOutput(expected: number[], numToMatch: number): boolean {
+    for (let i = 0; i < numToMatch; i++) {
+      if (this.output[i] !== expected[i])
+        return false;
+    }
+
+    return true;
+  }
+
+  matchesOutputLast(expected: number[], numToMatch: number): boolean {
+    if (expected.length !== this.output.length)
+      return false;    
+
+    for (let i = 0; i < numToMatch; i++) {
+      const posToMatch = expected.length - numToMatch;
+      if (this.output[posToMatch] !== expected[posToMatch])
+        return false;
+    }
+
+    return true;
+  }
+}
+
+function asBinary(num: number) {
+  return num.toString(2);
 }
 
 export function modulo(num: number, wrap: number) {
@@ -200,23 +264,91 @@ if (import.meta.main) {
   const parts = text.split("\n\n");
   const registerLines = parts[0].split("\n");
   const programLine = parts[1];
+  const instructions = programLine.split(" ")[1].split(",").map((t) =>
+    parseInt(t)
+  );
 
-  const overwriteA = Math.pow(8, 15) + 6 + 64*5;
-  console.log("A => " + overwriteA + "binary=#" + overwriteA.toString(2));
-  const registers = new Registers(registerLines);
+  // const overwriteA = Math.pow(8, 15);
+  const originalRegisters = new Registers(registerLines);
+  const expectedAnswer = instructions;
 
-  const program = new Program(programLine, registers, overwriteA);
+  const answer8Powers: number[] = [];
+  let fixedNum: number = 0;
+  
+  for (let i = 0; i < 16; i++) {
+    
+    
+    const positionsToMatch = i + 1;
 
-  console.log(registers);
+    let matchesPositions = false;
 
-  while (program.executeInstruction());
+    const answersFoundThisRound = [];
 
-  console.log(registers);
+    const baseNum = Math.pow(8, 15 - i);
+    for (let numberToTry = 0; numberToTry < 8; numberToTry++) {
+      
+      const attempt = numberToTry * baseNum;
 
-  program.printOutput();
+      const overwriteA = fixedNum + attempt;
+      const registers = structuredClone(originalRegisters);
+      const program = new Program(instructions, registers, overwriteA);
 
+      program.executeAllInstructions();
+
+      console.log(`> Position ${positionsToMatch}: trying ${numberToTry}, outcome ${program.output}`);
+
+      if (program.matchesOutputLast(expectedAnswer, positionsToMatch)) {
+        // fixedNum += attempt;
+        // answer8Powers.push(numberToTry);
+        answersFoundThisRound.push(numberToTry);
+        
+        matchesPositions = true;
+      }
+    }
+
+    if (matchesPositions) {
+      console.log(`Found ${answersFoundThisRound.length} this round`);
+
+      const firstAnswer = answersFoundThisRound.at(0);
+      const secondAnswer = answersFoundThisRound.at(1);
+      const thirdAnswer = answersFoundThisRound.at(2);
+      const lastAnswer = answersFoundThisRound.at(-1)!;
+
+      let answerToPick = lastAnswer;
+
+      if (positionsToMatch === 2) {
+        answerToPick = firstAnswer!;
+      }
+
+      if (positionsToMatch === 6) {
+        answerToPick = lastAnswer!;
+      }
+
+      if (positionsToMatch === 10) {
+        answerToPick = secondAnswer!;
+      }
+
+      if (positionsToMatch === 14) {
+        answerToPick = firstAnswer!;
+      }
+
+      fixedNum += answerToPick * baseNum;
+      answer8Powers.push(answerToPick);
+
+
+      console.log(`%c Matching ...${expectedAnswer.slice(expectedAnswer.length - positionsToMatch)}]: answer ${answer8Powers.at(-1)} worked!`, "background-color: green");
+      console.log();
+        
+    }
+     else 
+      throw new Error("Cannot continue");
+  }
+
+  console.log(fixedNum);
+  
+  
   // Input to aim for
-  // 2,4,1,1,7,5,1,5,0,3,4,3,5,5,3,0 
+  // 2,4,1,1,7,5,1,5,0,3,4,3,5,5,3,0
   // (the answer outputs 16 values)
 
   // (2) bst 'register A `modulo` 8 --> B' (B will be between 0 and 7) (overwrites B)
@@ -231,14 +363,16 @@ if (import.meta.main) {
 
   // (3) jnz 'literal 0 if A != 0': start over when A is not 0
 
-
   // >> Analysis
 
   // (1) bxl 'literal 1: register B `xor` 000000001 --> B' (0 -> 1, 1 -> 0, 2 -> 3, 3 -> 2, 4 -> 5, 5 -> 4, 6 -> 7, 7 -> 6)
   // (1) bxl 'literal 5: register B `xor` 000000101 --> B' (0 -> 5, 1 -> 4, 2 -> 7, 3 -> 6, 4 -> 1, 5 -> 0, 6 -> 3, 7 -> 2)
 
   // Combined (0 -> 4) (1 -> 5) (2 -> 6) (3 -> 7) (4 -> 0) (5 -> 1) (6 -> 2) (7 -> 3)
-
-
-
 }
+
+
+// 164542234324925 too high
+// 164545346498493 too high
+// 164545346498493
+// 164545346498237 too high
