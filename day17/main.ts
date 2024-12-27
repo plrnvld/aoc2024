@@ -1,7 +1,7 @@
 class Registers {
-  a: number;
-  b: number;
-  c: number;
+  a: bigint;
+  b: bigint;
+  c: bigint;
 
   constructor(registerLines: string[]) {
     this.a = this.#readRegister(registerLines[0]);
@@ -9,8 +9,8 @@ class Registers {
     this.c = this.#readRegister(registerLines[2]);
   }
 
-  #readRegister(line: string) {
-    return parseInt(line.split(" ")[2]);
+  #readRegister(line: string):bigint {
+    return BigInt(line.split(" ")[2]);
   }
 }
 
@@ -23,7 +23,7 @@ class Program {
   constructor(
     instructions: number[],
     registers: Registers,
-    overwriteA: number,
+    overwriteA: bigint,
   ) {
     this.instructions = instructions;
 
@@ -32,6 +32,35 @@ class Program {
 
     this.output = [];
     this.pointer = 0;
+  }
+
+  checkOutput(expected: number[], checkFromSide: number) {
+    
+    // console.log(` > Check(${checkFromSide}) Expected = ${expected} Actual = ${this.output}`);
+
+    if (checkFromSide === 0)
+      return true;
+    
+    if (this.output.length !== expected.length) {
+      return false;
+    }
+
+    for (let i = 0; i < checkFromSide; i++) {
+      // const left = i;
+      // const right = expected.length - 1 - i;
+
+      // if (
+      //   this.output[left] !== expected[left] ||
+      //   this.output[right] !== expected[right]
+      // ) {
+      //   return false;
+      // }
+
+      if (this.output[i] !== expected[i]) // ############# 
+        return false;
+    }
+
+    return true;
   }
 
   executeAllInstructions() {
@@ -46,7 +75,8 @@ class Program {
     }
 
     const opCode = this.instructions[this.pointer];
-    const operand = this.instructions[this.pointer + 1];
+    const inst = this.instructions[this.pointer + 1];
+    const operand = BigInt(inst);
 
     let changedPointer: number | undefined = undefined;
 
@@ -80,15 +110,13 @@ class Program {
   }
 
   // Opcode 0
-  adv(combo: number) { // truncated( A / 2^combo ) --> A
-    const result = Math.trunc(
-      this.registers.a / Math.pow(2, this.getComboValue(combo)),
-    );
+  adv(combo: bigint) { // truncated( A / 2^combo ) --> A
+    const result: bigint = this.registers.a / BigInt(Math.pow(2, Number(this.getComboValue(combo))));
     this.registers.a = result;
   }
 
   // Opcode 1
-  bxl(literal: number) { // B `xor` literal --> B
+  bxl(literal: bigint) { // B `xor` literal --> B
     const result = this.registers.b ^ literal;
 
     // console.log(
@@ -103,8 +131,8 @@ class Program {
   }
 
   // Opcode 2
-  bst(combo: number) { // combo `modulo` 8 --> B
-    const result = modulo(this.getComboValue(combo), 8);
+  bst(combo: bigint) { // combo `modulo` 8 --> B
+    const result = modulo(this.getComboValue(combo), 8n);
 
     // console.log(
     //   `  > BST: ${
@@ -116,20 +144,20 @@ class Program {
   }
 
   // Opcode 3
-  jnz(literal: number): number | undefined { // if (A == 0) then nothing, else jump to literal, if it jumps, dont increase pointer
-    if (this.registers.a === 0) {
+  jnz(literal: bigint): number | undefined { // if (A == 0) then nothing, else jump to literal, if it jumps, dont increase pointer
+    if (this.registers.a === 0n) {
       return undefined;
     }
 
-    if (literal === this.pointer) {
+    if (Number(literal) === this.pointer) {
       return undefined;
     }
 
-    return literal;
+    return Number(literal);
   }
 
   // Opcode 4
-  bxc(_: number) { // B `xor` C --> B (ignore operand)
+  bxc(_: bigint) { // B `xor` C --> B (ignore operand)
     const result = this.registers.b ^ this.registers.c;
 
     // console.log(
@@ -144,8 +172,8 @@ class Program {
   }
 
   // Opcode 5
-  out(combo: number) { // combo `modulo` 8 --> output (multiple outputs separated by comma's)
-    const result = modulo(this.getComboValue(combo), 8);
+  out(combo: bigint) { // combo `modulo` 8 --> output (multiple outputs separated by comma's)
+    const result = modulo(this.getComboValue(combo), 8n);
 
     // console.log(
     //   ` > Outputting from: ${
@@ -153,22 +181,20 @@ class Program {
     //   } % 8 = ${result}\n`,
     // );
 
-    this.output.push(result);
+    this.output.push(Number(result));
   }
 
   // Opcode 6
-  bdv(combo: number) { // truncated( A / 2^combo ) --> B
-    const result = Math.trunc(
-      this.registers.a / Math.pow(2, this.getComboValue(combo)),
-    );
+  bdv(combo: bigint) { // truncated( A / 2^combo ) --> B
+    const result =this.registers.a / BigInt(Math.pow(2, Number(this.getComboValue(combo))));
     this.registers.b = result;
   }
 
   // Opcode 7
-  cdv(combo: number) { // truncated( A / 2^combo ) --> C
-    const result = Math.trunc(
-      this.registers.a / Math.pow(2, this.getComboValue(combo)),
-    );
+  cdv(combo: bigint) { // truncated( A / 2^combo ) --> C
+    const result: bigint = BigInt(Math.trunc(
+      Number(this.registers.a) / Number(Math.pow(2, Number(this.getComboValue(combo)))),
+    ));
 
     // console.log(
     //   `    > CDV: trunc(register A ${this.registers.a} (#${
@@ -181,20 +207,20 @@ class Program {
     this.registers.c = result;
   }
 
-  getComboValue(combo: number): number {
-    if (combo >= 0 && combo <= 3) {
+  getComboValue(combo: bigint): bigint {
+    if (combo >= 0n && combo <= 3n) {
       return combo;
     }
 
-    if (combo === 4) {
+    if (combo === 4n) {
       return this.registers.a;
     }
 
-    if (combo === 5) {
+    if (combo === 5n) {
       return this.registers.b;
     }
 
-    if (combo === 6) {
+    if (combo === 6n) {
       return this.registers.c;
     }
 
@@ -245,7 +271,7 @@ class Program {
 
     for (let i = 0; i < numToMatch; i++) {
       const posToMatch = expected.length - numToMatch;
-      if (this.output[posToMatch] !== expected[posToMatch]) {
+      if (Number(this.output[posToMatch]) !== expected[posToMatch]) {
         return false;
       }
     }
@@ -254,18 +280,19 @@ class Program {
   }
 }
 
-function asBinary(num: number) {
+function asBinary(num: bigint) {
   return num.toString(2);
 }
 
-export function modulo(num: number, wrap: number) {
-  if (num < 0) {
+export function modulo(num: bigint, wrap: bigint): bigint {
+  if (num < BigInt(0)) {
     return (wrap + (num % wrap)) % wrap;
   }
 
   return num % wrap;
 }
 
+export { PartialA }
 class PartialA {
   registerABytes: number[];
   filled: number;
@@ -282,7 +309,6 @@ class PartialA {
 
     for (let left = 0; left < 8; left++) {
       for (let right = 0; right < 8; right++) {
-
         const bytes = [...this.registerABytes];
         bytes[nextFilled] = left;
         bytes[bytes.length - 1 - nextFilled] = right;
@@ -294,22 +320,29 @@ class PartialA {
     return expanded;
   }
 
-  calcRegister():number {
-    let result = 0;
-    let base = 1;
+  calcRegister(): bigint {
+    let result = BigInt(0);
+    let base = BigInt(1);
 
     for (let i = 0; i < this.registerABytes.length; i++) {
       const byte = this.registerABytes[this.registerABytes.length - 1 - i];
-      if (byte !== undefined)
-        result += base * byte;
 
-      base *= 16;
+      if (byte !== undefined) {
+        result = result + base * BigInt(byte);
+
+      }
+
+      base = base * BigInt(16);
     }
 
-    return result;
+    return result; 
   }
 
-  static newPartialAnser() {
+  isFilled(): boolean {
+    return this.filled === 16; // ######## 
+  }
+
+  static newPartialAnswer() {
     return new PartialA(Array(16), 0);
   }
 }
@@ -327,101 +360,57 @@ if (import.meta.main) {
   const originalRegisters = new Registers(registerLines);
   const expectedAnswer = instructions;
 
-  const answer8Powers: number[] = [];
-  let fixedNum: number = 0;
+  
+  const queue: PartialA[] = [];
 
-  for (let i = 0; i < 16; i++) {
-    const positionsToMatch = i + 1;
+  const startAnswers = [];
 
-    let matchesPositions = false;
+  for (let i = 0; i < 8; i++) {
+    const undefinedArray = Array(16);
+    undefinedArray[0] = 7;
+    undefinedArray[15] = i;
 
-    const answersFoundThisRound = [];
+    startAnswers.push(new PartialA(undefinedArray, 1));
+  }
 
-    const potentialAnswers: number[][] = [];
+  startAnswers.forEach((a) => queue.push(a));
+  
+  const solutions: PartialA[] = [];
 
-    const baseNum = Math.pow(8, 15 - i);
-    for (let numberToTry = 0; numberToTry < 8; numberToTry++) {
-      const attempt = numberToTry * baseNum;
+  while (queue.length > 0) {
+    const partialAnswer = queue.pop()!;
 
-      const overwriteA = fixedNum + attempt;
-      const registers = structuredClone(originalRegisters);
-      const program = new Program(instructions, registers, overwriteA);
+    const registers = structuredClone(originalRegisters);
+    const program = new Program(
+      instructions,
+      registers,
+      partialAnswer.calcRegister(),
+    );
+    program.executeAllInstructions();
+    const numToCheck = Math.max(partialAnswer.filled - 2, 0);
+    const partialMatch = program.checkOutput(expectedAnswer, numToCheck);
 
-      program.executeAllInstructions();
+    console.log(`     > Partial(${partialAnswer.calcRegister()}) Expected = ${expectedAnswer} Actual = ${program.output}`);
 
-      console.log(
-        `> Position ${positionsToMatch}: trying ${numberToTry}, outcome ${program.output}`,
-      );
+    if (partialMatch) {
 
-      if (program.matchesOutputLast(expectedAnswer, positionsToMatch)) {
-        // fixedNum += attempt;
-        // answer8Powers.push(numberToTry);
-        answersFoundThisRound.push(numberToTry);
+      if (numToCheck > 0)
+        console.log(`> partial match. (${numToCheck}) Expected ${expectedAnswer} Actual ${program.output}`);
 
-        matchesPositions = true;
-      }
-    }
-
-    if (matchesPositions) {
-      console.log(`Found ${answersFoundThisRound.length} this round`);
-
-      const firstAnswer = answersFoundThisRound.at(0);
-      const secondAnswer = answersFoundThisRound.at(1);
-      const thirdAnswer = answersFoundThisRound.at(2);
-      const fourthAnswer = answersFoundThisRound.at(3);
-      const lastAnswer = answersFoundThisRound.at(-1)!;
-
-      let answerToPick = lastAnswer;
-
-      if (positionsToMatch === 2) {
-        answerToPick = firstAnswer!;
-      }
-
-      if (positionsToMatch === 6) {
-        answerToPick = firstAnswer!;
-      }
-
-      if (positionsToMatch === 9) {
-        answerToPick = firstAnswer!;
-      }
-
-      if (positionsToMatch === 11) {
-        answerToPick = firstAnswer!;
-      }
-
-      if (positionsToMatch === 12) { //
-        answerToPick = secondAnswer!;
-      }
-
-      if (positionsToMatch === 15) { //
-        answerToPick = firstAnswer!;
-      }
-
-      fixedNum += answerToPick * baseNum;
-      answer8Powers.push(answerToPick);
-
-      if (expectedAnswer.length === positionsToMatch) {
-        console.log(
-          `%c Matching [${
-            expectedAnswer.slice(expectedAnswer.length - positionsToMatch)
-          }]: answer ${answer8Powers.at(-1)} worked!`,
-          "background-color: green",
-        );
+      if (partialAnswer.isFilled()) {
+        solutions.push(partialAnswer);
       } else {
-        console.log(
-          `%c Matching ...${
-            expectedAnswer.slice(expectedAnswer.length - positionsToMatch)
-          }]: answer ${answer8Powers.at(-1)} worked!`,
-          "background-color: green",
-        );
+        console.log("Adding new partial answers **** ")
+        const newAnswers = partialAnswer.expandAnswers();
+        newAnswers.forEach((a) => queue.push(a));
       }
-      console.log();
-    } else {
-      throw new Error("Cannot continue");
     }
   }
 
-  console.log(fixedNum);
+  console.log("Solution count = " + solutions.length);
+  for (const solution of solutions) {
+    console.log(solution.calcRegister());
+  }
 
   // Input to aim for
   // 2,4,1,1,7,5,1,5,0,3,4,3,5,5,3,0
