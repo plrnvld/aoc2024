@@ -35,17 +35,17 @@ class PartialA {
         result = result + base * BigInt(byte);
       }
 
-      base = base * BigInt(16);
+      base = base * BigInt(8);
     }
 
     return result;
   }
 
   isFilled(): boolean {
-    return this.filled === 8; // ########
+    return this.filled === 16; // ########
   }
 
   static newPartialAnswer() {
-    return new PartialA(Array(12), 0);
+    return new PartialA(Array(16), 0);
   }
 }

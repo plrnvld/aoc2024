@@ -19,18 +19,7 @@ if (import.meta.main) {
 
   const queue: PartialA[] = [];
 
-  const startAnswers = [];
-
-  // for (let j = 0; j < 8; j++) {
-    for (let i = 0; i < 8; i++) {
-      const undefinedArray = Array(12);
-      undefinedArray[15] = i;
-
-      startAnswers.push(new PartialA(undefinedArray, 2));
-    }
-  // }
-
-  startAnswers.forEach((a) => queue.push(a));
+  PartialA.newPartialAnswer().expandAnswers().flatMap(a => a.expandAnswers()).forEach((a) => queue.push(a));
 
   const solutions: PartialA[] = [];
 
@@ -43,7 +32,7 @@ if (import.meta.main) {
       partialAnswer.calcRegister(),
     );
     program.executeAllInstructions();
-    const numToCheck = Math.max(partialAnswer.filled - 1, 0);
+    const numToCheck = Math.max(partialAnswer.filled -8, 0);
     const isPartialMatch = program.checkOutput(expectedAnswer, numToCheck);
 
     // console.log(
