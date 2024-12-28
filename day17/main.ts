@@ -1,8 +1,5 @@
 import { PartialA } from "./partial_a.ts";
-import { Registers, Program } from "./program.ts";
-
-
-
+import { Program, Registers } from "./program.ts";
 
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
@@ -13,13 +10,13 @@ if (import.meta.main) {
     parseInt(t)
   );
 
-  // const overwriteA = Math.pow(8, 15);
   const originalRegisters = new Registers(registerLines);
   const expectedAnswer = instructions;
 
   const queue: PartialA[] = [];
 
-  PartialA.newPartialAnswer().expandLeft().flatMap(a => a.expandRight()).forEach((a) => queue.push(a));
+  PartialA.newPartialAnswer().expandLeft().flatMap((a) => a.expandRight())
+    .forEach((a) => queue.push(a));
 
   const solutions: PartialA[] = [];
 
@@ -32,36 +29,43 @@ if (import.meta.main) {
       partialAnswer.calcRegister(),
     );
     program.executeAllInstructions();
-    const numToCheck = Math.max(partialAnswer.filledLeft + partialAnswer.filledRight - 2, 0);
+    const numToCheck = Math.max(
+      partialAnswer.filledLeft + partialAnswer.filledRight - 4,
+      0,
+    );
+
     const isPartialMatch = program.checkOutput(expectedAnswer, numToCheck);
 
     console.log(
-      `     > Partial(${partialAnswer.calcRegister()}) Expected = ${expectedAnswer} Actual = ${program.output}. Checking ${numToCheck}`,
+      `> Expected = ${expectedAnswer} Actual = ${program.output}. [Check ${numToCheck}]`,
     );
 
     if (isPartialMatch) {
-      if (numToCheck > 1) {
-        console.log(
-          `>>> partial match. (${numToCheck}) Expected ${expectedAnswer} Actual ${program.output} Check = ${numToCheck}`,
-        );
-      }
-
       if (partialAnswer.isFilled()) {
-        if (program.checkOutput(expectedAnswer, 16))
+        if (program.checkOutput(expectedAnswer, 16)) {
           solutions.push(partialAnswer);
+        }
       } else {
-        console.log("Adding new partial answers **** ");
-        if (Math.random() > 0.5)  
+        if (Math.random() > 0.5) {
           partialAnswer.expandLeft().forEach((a) => queue.push(a));
-        else
+        } else {
           partialAnswer.expandRight().forEach((a) => queue.push(a));
+        }
       }
     }
   }
 
-  console.log("Solution count = " + solutions.length);
-  for (const solution of solutions.toSorted((x, y) => Number(x.calcRegister() - y.calcRegister()))) {
-    const programToCheck = new Program(instructions, originalRegisters, solution.calcRegister());
+  console.log("\nSolution count = " + solutions.length);
+  for (
+    const solution of solutions.toSorted((x, y) =>
+      Number(x.calcRegister() - y.calcRegister())
+    )
+  ) {
+    const programToCheck = new Program(
+      instructions,
+      originalRegisters,
+      solution.calcRegister(),
+    );
     programToCheck.executeAllInstructions();
     const outputForChecking = programToCheck.output;
     console.log(solution.calcRegister() + " OUTPUT: " + outputForChecking);
@@ -97,3 +101,5 @@ if (import.meta.main) {
 // 164545346498493
 // 164545346498237 too high
 // 164545346498237
+//
+// 164542125272765 victory

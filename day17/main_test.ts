@@ -18,13 +18,17 @@ Deno.test(function partialInit() {
   const fourthNextNexts = fourthNext.expandLeft();
   assertEquals(fourthNextNexts.length, 8);
 
-
-  assertEquals(fourthNextNexts[3].calcRegister(), 4n * BigInt(Math.pow(8, 15)) + 3n * BigInt(Math.pow(8, 14)) );
+  assertEquals(
+    fourthNextNexts[3].calcRegister(),
+    4n * BigInt(Math.pow(8, 15)) + 3n * BigInt(Math.pow(8, 14)),
+  );
 
   const nextNextRightNexts = fourthNextNexts[3].expandRight();
-  assertEquals(nextNextRightNexts[6].calcRegister(), 4n * BigInt(Math.pow(8, 15)) + 3n * BigInt(Math.pow(8, 14)) + 6n);
+  assertEquals(
+    nextNextRightNexts[6].calcRegister(),
+    4n * BigInt(Math.pow(8, 15)) + 3n * BigInt(Math.pow(8, 14)) + 6n,
+  );
 });
-
 
 Deno.test(function calcRegisters() {
   const undefinedArray = Array(16);

@@ -4,7 +4,11 @@ class PartialA {
   filledLeft: number;
   filledRight: number;
 
-  constructor(registerABytes: number[], filledLeft: number, filledRight: number) {
+  constructor(
+    registerABytes: number[],
+    filledLeft: number,
+    filledRight: number,
+  ) {
     this.registerABytes = registerABytes;
     this.filledLeft = filledLeft;
     this.filledRight = filledRight;
@@ -19,7 +23,6 @@ class PartialA {
       const bytes = [...this.registerABytes];
       bytes[this.filledLeft] = expandWith;
 
-      
       expanded.push(new PartialA(bytes, nextFilled, this.filledRight));
     }
 
@@ -35,7 +38,6 @@ class PartialA {
       const bytes = [...this.registerABytes];
       bytes[bytes.length - 1 - this.filledRight] = expandWith;
 
-      
       expanded.push(new PartialA(bytes, this.filledLeft, nextFilled));
     }
 
@@ -60,7 +62,7 @@ class PartialA {
   }
 
   isFilled(): boolean {
-    return this.filledLeft + this.filledRight === 16; // ########
+    return this.filledLeft + this.filledRight === 16;
   }
 
   static newPartialAnswer() {
