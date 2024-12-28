@@ -20,35 +20,30 @@ import { Registers } from "./registers.ts";
       this.pointer = 0;
     }
   
-    checkOutput(expected: number[], checkFromSide: number) {
+    checkOutput(expected: number[], checkNum: number) {
       // console.log(` > Check(${checkFromSide})`);
-  
-      if (checkFromSide === 0) {
+      if (checkNum === 0) {
         return true;
       }
   
-      // if (this.output.length !== expected.length) {
-      //   return false;
-      // }
-  
-      for (let i = 0; i < checkFromSide; i++) {
-        // const left = i;
-        
-        // if (
-        //   this.output[left] !== expected[left] ||
-        //   this.output[right] !== expected[right]
-        // ) {
-        //   return false;
-        // }
-  
-        if (this.output[this.output.length - 1 - i] !== expected[expected.length - 1 - i]) { // #############
-          // console.log("Different number, expected " + expected[expected.length - 1 - i] + " but was " + this.output[this.output.length - 1 - i]);
-          return false;
-        }
+      if (this.output.length !== expected.length) {
+        return false;
       }
   
-      // console.log("> Match!")
-      return true;
+      let leftMatch = 0;
+      while (expected[leftMatch] !== undefined && expected[leftMatch] === this.output[leftMatch]) {
+        leftMatch++;
+      }
+
+      if (leftMatch > 15)
+        return true;
+
+      let rightMatch = 0;
+      while (expected[15 - rightMatch] !== undefined && expected[15 - rightMatch] === this.output[15 - rightMatch]) {
+        rightMatch++;
+      }
+
+      return leftMatch + rightMatch >= checkNum;      
     }
   
     executeAllInstructions() {

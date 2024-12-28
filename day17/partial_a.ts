@@ -1,24 +1,42 @@
 export { PartialA };
 class PartialA {
   registerABytes: number[];
-  filled: number;
+  filledLeft: number;
+  filledRight: number;
 
-  constructor(registerABytes: number[], filled: number) {
+  constructor(registerABytes: number[], filledLeft: number, filledRight: number) {
     this.registerABytes = registerABytes;
-    this.filled = filled;
+    this.filledLeft = filledLeft;
+    this.filledRight = filledRight;
   }
 
-  expandAnswers(): PartialA[] {
+  expandLeft(): PartialA[] {
     const expanded: PartialA[] = [];
 
-    const nextFilled = this.filled + 1;
-    
-    for (let right = 0; right < 8; right++) {
-      const bytes = [...this.registerABytes];
-      const rightPos = bytes.length - 1 - this.filled;
-      bytes[rightPos] = right;
+    const nextFilled = this.filledLeft + 1;
 
-      expanded.push(new PartialA(bytes, nextFilled));
+    for (let expandWith = 0; expandWith < 8; expandWith++) {
+      const bytes = [...this.registerABytes];
+      bytes[this.filledLeft] = expandWith;
+
+      
+      expanded.push(new PartialA(bytes, nextFilled, this.filledRight));
+    }
+
+    return expanded;
+  }
+
+  expandRight(): PartialA[] {
+    const expanded: PartialA[] = [];
+
+    const nextFilled = this.filledRight + 1;
+
+    for (let expandWith = 0; expandWith < 8; expandWith++) {
+      const bytes = [...this.registerABytes];
+      bytes[bytes.length - 1 - this.filledRight] = expandWith;
+
+      
+      expanded.push(new PartialA(bytes, this.filledLeft, nextFilled));
     }
 
     return expanded;
@@ -42,10 +60,10 @@ class PartialA {
   }
 
   isFilled(): boolean {
-    return this.filled === 16; // ########
+    return this.filledLeft + this.filledRight === 16; // ########
   }
 
   static newPartialAnswer() {
-    return new PartialA(Array(16), 0);
+    return new PartialA(Array(16), 0, 0);
   }
 }

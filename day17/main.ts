@@ -19,7 +19,7 @@ if (import.meta.main) {
 
   const queue: PartialA[] = [];
 
-  PartialA.newPartialAnswer().expandAnswers().flatMap(a => a.expandAnswers()).forEach((a) => queue.push(a));
+  PartialA.newPartialAnswer().expandLeft().flatMap(a => a.expandRight()).forEach((a) => queue.push(a));
 
   const solutions: PartialA[] = [];
 
@@ -32,12 +32,12 @@ if (import.meta.main) {
       partialAnswer.calcRegister(),
     );
     program.executeAllInstructions();
-    const numToCheck = Math.max(partialAnswer.filled -8, 0);
+    const numToCheck = Math.max(partialAnswer.filledLeft + partialAnswer.filledRight - 2, 0);
     const isPartialMatch = program.checkOutput(expectedAnswer, numToCheck);
 
-    // console.log(
-    //   `     > Partial(${partialAnswer.calcRegister()}) Expected = ${expectedAnswer} Actual = ${program.output}. Checking ${numToCheck}`,
-    // );
+    console.log(
+      `     > Partial(${partialAnswer.calcRegister()}) Expected = ${expectedAnswer} Actual = ${program.output}. Checking ${numToCheck}`,
+    );
 
     if (isPartialMatch) {
       if (numToCheck > 1) {
@@ -47,18 +47,24 @@ if (import.meta.main) {
       }
 
       if (partialAnswer.isFilled()) {
-        solutions.push(partialAnswer);
+        if (program.checkOutput(expectedAnswer, 16))
+          solutions.push(partialAnswer);
       } else {
-        // console.log("Adding new partial answers **** ");
-        const newAnswers = partialAnswer.expandAnswers();
-        newAnswers.forEach((a) => queue.push(a));
+        console.log("Adding new partial answers **** ");
+        if (Math.random() > 0.5)  
+          partialAnswer.expandLeft().forEach((a) => queue.push(a));
+        else
+          partialAnswer.expandRight().forEach((a) => queue.push(a));
       }
     }
   }
 
   console.log("Solution count = " + solutions.length);
-  for (const solution of solutions) {
-    console.log(solution.calcRegister());
+  for (const solution of solutions.toSorted((x, y) => Number(x.calcRegister() - y.calcRegister()))) {
+    const programToCheck = new Program(instructions, originalRegisters, solution.calcRegister());
+    programToCheck.executeAllInstructions();
+    const outputForChecking = programToCheck.output;
+    console.log(solution.calcRegister() + " OUTPUT: " + outputForChecking);
   }
 
   // Input to aim for
