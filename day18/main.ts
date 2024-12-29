@@ -1,35 +1,48 @@
-class Pos {
-  x: number;
-  y: number;
+type Space = "empty" | "corrupted";
 
-  constructor(x: number, y: number) {
-    this.x = x;
-    this.y = y;
+class MemorySpace {
+  width: number;
+  height: number;
+  spaces: Space[][];
+
+  constructor(width: number, height: number, corruptions: Pos[]) {
+    this.width = width;
+    this.height = height;
+    this.spaces = new Array(height);
+
+    for (let y = 0; y < height; y++) {
+      this.spaces[y] = Array(width).fill("empty");
+    }
+
+    for (const corruption of corruptions) {
+      this.spaces[corruption.y][corruption.x] = "corrupted";
+    }
   }
 
-  get key():number {
-    return this.y * 1000 + this.y;
-  }
-
-  static fromLine(line: string): Pos {
-    const parts = line.split(",");
-    const x = parseInt(parts[0]);
-    const y = parseInt(parts[1]);
-
-    return new Pos(x, y);
-  }
-
-  static fromKey(key: number): Pos {
-    const x = key % 1000;
-    const y = (key - x) / 1000;
-    return new Pos(x, y);
+  print() {
+    for (let y = 0; y < this.height; y++) {
+      const line = this.spaces[y].map((s) => s === "corrupted" ? "#" : ".")
+        .join("");
+      console.log(line);
+    }
   }
 }
+
+import { Pos } from "./pos.ts";
 
 if (import.meta.main) {
   const text = await Deno.readTextFile("example");
   const lines = text.split("\n");
-  const positions = lines.map(l => Pos.fromLine(l));
+  const corruptions = lines.map((l) => Pos.fromLine(l));
 
-  console.log(positions.length);
+  const size = 7;
+  const numCorruptions = 12;
+
+  const memorySpace = new MemorySpace(
+    size,
+    size,
+    corruptions.slice(0, numCorruptions),
+  );
+
+  memorySpace.print();
 }
