@@ -39,15 +39,19 @@ export class Graph {
         if (this.getSpace(pos) === "empty") {
           const vertex = new Vertex(pos);
           this.vertices[vertex.id] = vertex;
+          console.log(
+            `-- Adding ${JSON.stringify(vertex)} on index ${vertex.id}`,
+          );
         }
       }
     }
   }
 
-  getVertex(id: number):Vertex {
+  getVertex(id: number): Vertex {
     const vertex = this.vertices[id];
-    if (vertex === undefined)
-        throw new Error("Vertex with id " + id + " not found");
+    if (vertex === undefined) {
+      throw new Error("Vertex with id " + id + " not found");
+    }
 
     return vertex;
   }
@@ -72,11 +76,14 @@ export class Graph {
   }
 
   neighbors(vertexId: number): number[] {
+    console.log("> Getting neighbors for " + vertexId);
     const vertex = this.vertices[vertexId];
 
     if (vertex === undefined) {
       throw new Error("No vertex found for id " + vertexId);
     }
+
+    console.log("Vertex pos " + JSON.stringify(vertex.pos));
 
     const neighborPositions = [
       vertex.pos.left,
@@ -89,6 +96,10 @@ export class Graph {
       this.vertices[p.key] !== undefined ? p.key : undefined
     );
 
-    return neighborIds.filter((id) => id !== undefined);
+    const results = neighborIds.filter((id) => id !== undefined);
+
+    console.log("Neighbors " + results);
+
+    return results;
   }
 }

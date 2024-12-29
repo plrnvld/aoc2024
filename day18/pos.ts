@@ -8,7 +8,7 @@ export class Pos {
   }
 
   get key(): number {
-    return this.y * 1000 + this.y;
+    return this.y * 1000 + this.x;
   }
 
   get left(): Pos {

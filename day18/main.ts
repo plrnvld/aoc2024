@@ -2,14 +2,20 @@ import { Pos } from "./pos.ts";
 import { MemorySpace } from "./memoryspace.ts";
 import { Graph } from "./graph.ts";
 
-function dijkstra(graph: Graph, startId: number, targetId: number): number {
+function dijkstra(graph: Graph): number {
   const queue: number[] = [];
   graph.vertices.forEach((v) => {
     queue.push(v.id);
     v.dist = Number.MAX_SAFE_INTEGER;
     v.prev = undefined;
   });
-  const startVertex = graph.getVertex(startId);
+  const startVertex = graph.getVertex(graph.startVertexId);
+
+  console.log(
+    "Start vertex: " + JSON.stringify(startVertex) + " with id " +
+      graph.startVertexId,
+  );
+
   startVertex.dist = 0;
 
   while (queue.length > 0) {
@@ -29,10 +35,13 @@ function dijkstra(graph: Graph, startId: number, targetId: number): number {
     });
 
     const uId = queue.pop()!; // Take last from reversed order is the smallest;
+
+    console.log("Processing vertex " + uId);
+
     const neighbors = graph.neighbors(uId);
     const u = graph.getVertex(uId);
 
-    if (u.id === targetId) {
+    if (u.id === graph.targetVertexId) {
       return u.dist;
     }
 
@@ -52,22 +61,27 @@ function dijkstra(graph: Graph, startId: number, targetId: number): number {
     }
   }
 
-  return graph.getVertex(targetId).dist;
+  return graph.getVertex(graph.targetVertexId).dist;
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("example");
+  const text = await Deno.readTextFile("input");
   const lines = text.split("\n");
   const corruptions = lines.map((l) => Pos.fromLine(l));
 
-  const size = 7;
-  const numCorruptions = 12;
+  const size = 71;
+  const numCorruptions = 1024;
 
   const memorySpace = new MemorySpace(
     size,
     size,
     corruptions.slice(0, numCorruptions),
   );
+
+  const graph = new Graph(memorySpace);
+  const result = dijkstra(graph);
+
+  console.log(result);
 
   memorySpace.print();
 }
