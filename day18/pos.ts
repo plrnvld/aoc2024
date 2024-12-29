@@ -11,6 +11,22 @@ export class Pos {
     return this.y * 1000 + this.y;
   }
 
+  get left(): Pos {
+    return new Pos(this.x - 1, this.y);
+  }
+
+  get right(): Pos {
+    return new Pos(this.x + 1, this.y);
+  }
+
+  get up(): Pos {
+    return new Pos(this.x, this.y - 1);
+  }
+
+  get down(): Pos {
+    return new Pos(this.x, this.y + 1);
+  }
+
   static fromLine(line: string): Pos {
     const parts = line.split(",");
     const x = parseInt(parts[0]);
