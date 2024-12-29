@@ -39,9 +39,6 @@ export class Graph {
         if (this.getSpace(pos) === "empty") {
           const vertex = new Vertex(pos);
           this.vertices[vertex.id] = vertex;
-          console.log(
-            `-- Adding ${JSON.stringify(vertex)} on index ${vertex.id}`,
-          );
         }
       }
     }
@@ -76,14 +73,11 @@ export class Graph {
   }
 
   neighbors(vertexId: number): number[] {
-    console.log("> Getting neighbors for " + vertexId);
     const vertex = this.vertices[vertexId];
 
     if (vertex === undefined) {
       throw new Error("No vertex found for id " + vertexId);
     }
-
-    console.log("Vertex pos " + JSON.stringify(vertex.pos));
 
     const neighborPositions = [
       vertex.pos.left,
@@ -96,10 +90,6 @@ export class Graph {
       this.vertices[p.key] !== undefined ? p.key : undefined
     );
 
-    const results = neighborIds.filter((id) => id !== undefined);
-
-    console.log("Neighbors " + results);
-
-    return results;
+    return neighborIds.filter((id) => id !== undefined);
   }
 }

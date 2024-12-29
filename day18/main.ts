@@ -11,11 +11,6 @@ function dijkstra(graph: Graph): number {
   });
   const startVertex = graph.getVertex(graph.startVertexId);
 
-  console.log(
-    "Start vertex: " + JSON.stringify(startVertex) + " with id " +
-      graph.startVertexId,
-  );
-
   startVertex.dist = 0;
 
   while (queue.length > 0) {
@@ -35,8 +30,6 @@ function dijkstra(graph: Graph): number {
     });
 
     const uId = queue.pop()!; // Take last from reversed order is the smallest;
-
-    console.log("Processing vertex " + uId);
 
     const neighbors = graph.neighbors(uId);
     const u = graph.getVertex(uId);
@@ -72,16 +65,18 @@ if (import.meta.main) {
   const size = 71;
   const numCorruptions = 1024;
 
+  for (let i = 1024; i < corruptions.length; i++) {
   const memorySpace = new MemorySpace(
     size,
     size,
-    corruptions.slice(0, numCorruptions),
+    corruptions.slice(0, i),
   );
 
   const graph = new Graph(memorySpace);
   const result = dijkstra(graph);
 
-  console.log(result);
+  console.log("For n = " + i + ": " + result + " ======> " + JSON.stringify(corruptions[i - 1]));
+}
 
-  memorySpace.print();
+  // memorySpace.print();
 }
