@@ -119,6 +119,11 @@ function buildEndGameMap(towelMap: Map<string, string[]>): Map<string, number> {
   return map;
 }
 
+function dynamicProgramSolutions(design: string, towelMap: Map<string, string[]>, endGameMap: Map<string, number>): number {
+  // Do the magic
+}
+
+
 function divideAndConquer(design: string, index: number, towelMap: Map<string, string[]>, endGameMap: Map<string, number>): number {
   let sum = 0;
   const remaining = design.length - index;
