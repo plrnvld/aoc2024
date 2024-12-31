@@ -60,7 +60,7 @@ if (import.meta.main) {
 
   console.log("End game map calculated with size " + endGameMap.size);
 
-  let solutionCount = 0n;
+  let solutionCount = 0;
   let i = 0;
 
   for (const design of designs) {
@@ -113,17 +113,17 @@ function dynamicProgramSolutions(
   design: string,
   endGameMap: Map<string, number>,
   towelSet: Set<string>,
-): bigint {
-  const solutions: bigint[] = new Array(design.length);
+): number {
+  const solutions: number[] = new Array(design.length);
   const lastIndex = solutions.length - 1;
 
   for (let n = 0; n < design.length; n++) {
     const i = lastIndex - n;
 
     if (n < 8) {
-      solutions[i] = BigInt(endGameMap.get(design.slice(i))!);
+      solutions[i] = endGameMap.get(design.slice(i))!;
     } else {
-      let combinedSolutions = 0n;
+      let combinedSolutions = 0;
 
       for (let j = 1; j <= 8; j++) {
         const slice = design.slice(i, i + j);
