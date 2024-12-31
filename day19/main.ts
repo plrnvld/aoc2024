@@ -137,8 +137,6 @@ function dynamicProgramSolutions(
     }
   }
 
-  console.log(solutions);
-
   return solutions[0];
 }
 
