@@ -48,6 +48,11 @@ if (import.meta.main) {
   const maxKeyLength = 5;
   const towelMap = buildTowelMap(towels, maxKeyLength);
 
+  const sortedTowels = towels.sort((x, y) => x.length - y.length);
+  const minTowelLength = sortedTowels.at(0)!.length;
+  const maxTowelLength = sortedTowels.at(-1)!.length;
+
+  console.log(`Min towel length = ${minTowelLength}, max towel length = ${maxTowelLength}`);
   console.log("Map size = " + towelMap.size);
 
   let solutionCount = 0;
