@@ -1,3 +1,5 @@
+type Match = "full" | "start" | "no";
+
 class PartialSolution {
   towels: string[] = [];
   remainingDesign: string;
@@ -20,9 +22,14 @@ class PartialSolution {
     );
   }
 
-  hasMatch(nextTowel: string): boolean {
-    return this.remainingDesign.length >= nextTowel.length &&
-      this.remainingDesign.startsWith(nextTowel);
+  hasMatch(nextTowel: string): Match {
+    if (this.remainingDesign.length < nextTowel.length)
+      return "no";
+
+    if (this.remainingDesign.length === nextTowel.length && nextTowel === this.remainingDesign)
+      return "full";
+    
+    return this.remainingDesign.startsWith(nextTowel) ? "start" : "no";
   }
 
   get isSolved(): boolean {
@@ -38,30 +45,54 @@ if (import.meta.main) {
   const designs = parts[1].split("\n");
   const towelMap = buildTowelMap(towels);
 
-  let solvableDesigns = 0;
+  let solutionCount = 0;
 
   for (const design of designs) {
-    const solution = findSolution(design, towelMap);
+    console.log("Trying to solve design " + design);
+    const solutions = findSolution(design, towelMap);
 
-    if (solution !== undefined) {
-      solvableDesigns += 1;
-    }
+    solutionCount += solutions.length;
   }
 
   console.log(`${towels.length} towels and ${designs.length} designs.`);
 
-  console.log(solvableDesigns);
+  console.log(solutionCount);
 }
 
 function findSolution(
   design: string,
   towelMap: Map<string, string[]>,
-): PartialSolution | undefined {
+): PartialSolution[] {
   if (design === "") {
     throw new Error("Empty design");
   }
 
-  return [];
+  const stack: PartialSolution[] = [new PartialSolution(design, [])];
+
+  const solutions: PartialSolution[] = [];
+
+  while (stack.length > 0) {
+    const curr = stack.pop()!;
+    const key = curr?.remainingDesign[0]!;
+    const towelOptions = towelMap.get(key) ?? [];
+
+    // console.log(` > Remaining ${curr.remainingDesign} has options ${towelOptions.join(",")}`);
+
+    for (const towelOption of towelOptions) {
+      const match = curr.hasMatch(towelOption);
+      if (match === "full") {
+        // console.log(`   > Full match with ${towelOption}`);
+        solutions.push(curr.nextSolution(towelOption));
+      }
+
+      if (match === "start") {
+        // console.log(`   > Start match with ${towelOption}`);
+        stack.push(curr.nextSolution(towelOption));
+      }
+    }
+  }
+
+  return solutions;
 }
 
 function buildTowelMap(towels: string[]): Map<string, string[]> {
