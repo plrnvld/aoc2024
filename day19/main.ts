@@ -42,10 +42,6 @@ class PartialSolution {
 
     return remainingDesign.startsWith(nextTowel) ? "start" : "no";
   }
-
-  get isSolved(): boolean {
-    return this.index >= this.design.length;
-  }
 }
 
 if (import.meta.main) {
@@ -54,28 +50,21 @@ if (import.meta.main) {
 
   const towels = parts[0].split(", ");
   const designs = parts[1].split("\n");
-  const maxKeyLength = 5;
-  const towelMap = buildTowelMap(towels, maxKeyLength);
+  const towelSet: Set<string> = new Set();
+  towels.forEach((t) => towelSet.add(t));
 
-  const sortedTowels = towels.sort((x, y) => x.length - y.length);
-  const minTowelLength = sortedTowels.at(0)!.length;
-  const maxTowelLength = sortedTowels.at(-1)!.length;
-
-  console.log(
-    `Min towel length = ${minTowelLength}, max towel length = ${maxTowelLength}`,
-  );
-  console.log("Map size = " + towelMap.size);
+  const towelMap = buildTowelMap(towels);
 
   const endGameMap = buildEndGameMap(towelMap);
 
   console.log("End game map calculated with size " + endGameMap.size);
 
-  let solutionCount = 0;
+  let solutionCount = 0n;
   let i = 0;
 
   for (const design of designs) {
     console.log(i + ") Solving '" + design + "'");
-    const solutions = divideAndConquer(design, 0, towelMap, endGameMap);
+    const solutions = dynamicProgramSolutions(design, endGameMap, towelSet);
 
     console.log(`  ==> ${solutions} solutions found.`);
 
@@ -90,7 +79,7 @@ if (import.meta.main) {
 
 function buildEndGameMap(towelMap: Map<string, string[]>): Map<string, number> {
   const map: Map<string, number> = new Map();
-  
+
   const possibleKeys: string[] = [];
 
   const keyStack: string[] = [""];
@@ -112,45 +101,49 @@ function buildEndGameMap(towelMap: Map<string, string[]>): Map<string, number> {
   }
 
   for (const key of possibleKeys) {
-    const numSolutions = findSolutions(key, towelMap, 1);
+    const numSolutions = findSolutions(key, towelMap);
     map.set(key, numSolutions);
   }
 
   return map;
 }
 
-function dynamicProgramSolutions(design: string, towelMap: Map<string, string[]>, endGameMap: Map<string, number>): number {
-  // Do the magic
-}
+function dynamicProgramSolutions(
+  design: string,
+  endGameMap: Map<string, number>,
+  towelSet: Set<string>,
+): bigint {
+  const solutions: bigint[] = new Array(design.length);
+  const lastIndex = solutions.length - 1;
 
+  for (let n = 0; n < design.length; n++) {
+    const i = lastIndex - n;
 
-function divideAndConquer(design: string, index: number, towelMap: Map<string, string[]>, endGameMap: Map<string, number>): number {
-  let sum = 0;
-  const remaining = design.length - index;
+    if (n < 8) {
+      solutions[i] = BigInt(endGameMap.get(design.slice(i))!);
+    } else {
+      let combinedSolutions = 0n;
 
-  if (remaining <= towelPartition) {
-    const lastSlice = design.slice(index);
-    // console.log(`  * Reached last part '${lastSlice}'`);
-    return findSolutionsWithEndGame(lastSlice, endGameMap);
-  }
+      for (let j = 1; j < 8; j++) {
+        const slice = design.slice(i, i + j);
 
-  for (let i = 1; i <= towelPartition; i++) {
-    const slice = design.slice(index, index + i);
-    const endGameSolutions = findSolutionsWithEndGame(slice, endGameMap);
-    
-    if (endGameSolutions !== 0) {
-      // console.log(`* Found ${endGameSolutions} for slice '${slice}'`);
-      sum += endGameSolutions * divideAndConquer(design, index + i, towelMap, endGameMap);
+        if (towelSet.has(slice)) {
+          combinedSolutions += solutions[i + j];
+        }
+      }
+
+      solutions[i] = combinedSolutions;
     }
   }
 
-  return sum;
+  console.log(solutions);
+
+  return solutions[0];
 }
 
 function findSolutions(
   design: string,
-  towelMap: Map<string, string[]>,
-  maxKeyLength: number,
+  towelMap: Map<string, string[]>
 ): number {
   if (design === "") {
     throw new Error("Empty design");
@@ -162,19 +155,13 @@ function findSolutions(
 
   while (stack.length > 0) {
     const curr = stack.pop()!;
-    const remainingDesignLength = curr.design.length - curr.index;
-    const keyLength = Math.min(remainingDesignLength, maxKeyLength);
-    const key = curr.design.slice(curr.index, curr.index + keyLength)!;
+    const key = curr.design.slice(curr.index, curr.index + 1)!;
     const towelOptions = towelMap.get(key) ?? [];
 
     for (const towelOption of towelOptions) {
       const match = curr.hasMatch(towelOption);
       if (match === "full") {
         solutionCount += 1;
-
-        if (solutionCount % 10000000 === 0) {
-          console.log("  --> " + solutionCount / 1000000 + " milion");
-        }
       }
 
       if (match === "start") {
@@ -186,90 +173,27 @@ function findSolutions(
   return solutionCount;
 }
 
-function findSolutionsWithEndGame(
-  design: string,
-  endGameMap: Map<string, number>,
-): number {
-  if (design === "") {
-    throw new Error("Empty design");
-  }
-
-  const stack: PartialSolution[] = [new PartialSolution(design, 0)];
-
-  let solutionCount = 0;
-
-  while (stack.length > 0) {
-    const curr = stack.pop()!;
-    const remainingDesignLength = curr.design.length - curr.index;
-
-    if (remainingDesignLength > towelPartition) {
-      throw new Error(`Remaining length ${remainingDesignLength} too long`);
-    }
-
-    const endGameResult = endGameMap.get(curr.design.slice(curr.index));
-    if (endGameResult === undefined) {
-      throw new Error(
-        `Key ${curr.design.slice(curr.index)} not found in end game map`,
-      );
-    }
-
-    solutionCount += endGameResult!;
-    
-  }
-
-  return solutionCount;
-}
-
 function buildTowelMap(
   towels: string[],
-  maxKeySize: number,
 ): Map<string, string[]> {
   const map: Map<string, string[]> = new Map();
 
-  const addValue = (key: string, value: string) => {
+  for (const towel of towels) {
+    const key = towel[0];
+
     const towelsWithKey = map.get(key);
 
     if (towelsWithKey === undefined) {
-      map.set(key, [value]);
+      map.set(key, [towel]);
     } else {
-      towelsWithKey.push(value);
+      towelsWithKey.push(towel);
       map.set(key, towelsWithKey);
-    }
-  };
-
-  const expandKey = (towel: string, required: number) => {
-    if (towel.length >= required) {
-      return [towel.slice(0, required)];
-    }
-
-    const expandedKeys: string[] = [];
-
-    const stack: string[] = [towel];
-
-    while (stack.length > 0) {
-      const curr = stack.pop()!;
-
-      if (curr.length < required) {
-        stack.push(curr + "w");
-        stack.push(curr + "u");
-        stack.push(curr + "b");
-        stack.push(curr + "r");
-        stack.push(curr + "g");
-      } else {
-        expandedKeys.push(curr);
-      }
-    }
-
-    return expandedKeys;
-  };
-
-  for (let keyLength = 1; keyLength <= maxKeySize; keyLength++) {
-    for (const towel of towels) {
-      const keys = expandKey(towel, keyLength);
-
-      keys.forEach((k) => addValue(k, towel));
     }
   }
 
   return map;
 }
+
+// 815870527308663722701965 too high
+// 486554925696246595074450 too high
+// 680190000280467 too low
