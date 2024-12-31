@@ -50,6 +50,7 @@ if (import.meta.main) {
 
   const towels = parts[0].split(", ");
   const designs = parts[1].split("\n");
+
   const towelSet: Set<string> = new Set();
   towels.forEach((t) => towelSet.add(t));
 
@@ -124,7 +125,7 @@ function dynamicProgramSolutions(
     } else {
       let combinedSolutions = 0n;
 
-      for (let j = 1; j < 8; j++) {
+      for (let j = 1; j <= 8; j++) {
         const slice = design.slice(i, i + j);
 
         if (towelSet.has(slice)) {
@@ -197,3 +198,4 @@ function buildTowelMap(
 // 815870527308663722701965 too high
 // 486554925696246595074450 too high
 // 680190000280467 too low
+// 681226908011510
