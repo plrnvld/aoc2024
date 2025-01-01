@@ -28,8 +28,8 @@ export class Graph {
     this.width = racetrack.width;
     this.height = racetrack.height;
     this.racetrack = racetrack;
-    this.startVertexId = new Pos(0, 0).key;
-    this.targetVertexId = new Pos(this.width - 1, this.height - 1).key;
+    this.startVertexId = racetrack.startPos.key;
+    this.targetVertexId = racetrack.endPos.key;
     this.vertices = Array(this.width * this.height);
 
     for (let y = 0; y < this.height; y++) {

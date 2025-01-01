@@ -13,22 +13,25 @@ function dijkstra(graph: Graph): number {
   startVertex.dist = 0;
 
   while (queue.length > 0) {
-    queue.sort((a, b) => {
-      const aDist = graph.getVertex(a).dist;
-      const bDist = graph.getVertex(b).dist;
+    let minDist = graph.getVertex(queue[0]).dist;
+    let minIndex = 0;
 
-      // Reversed order, biggest first
-      if (aDist > bDist) {
-        return -1;
+    for (let i = 1; i < queue.length; i++) {
+      const currDist = graph.getVertex(queue[i]).dist;
+      if (currDist < minDist) {
+        minDist = currDist;
+        minIndex = i;
       }
-      if (aDist < bDist) {
-        return 1;
-      }
+    }
 
-      return 0;
-    });
+    const lastIndex = queue.length - 1;
+    if (minIndex !== lastIndex) { // Not last index, swap vertex ids, so lowest dist is last
+      const tempVertexId = queue[lastIndex];
+      queue[lastIndex] = queue[minIndex];
+      queue[minIndex] = tempVertexId;
+    }
 
-    const uId = queue.pop()!; // Take last from reversed order is the smallest;
+    const uId = queue.pop()!;
 
     const neighbors = graph.neighbors(uId);
     const u = graph.getVertex(uId);
@@ -62,5 +65,8 @@ if (import.meta.main) {
 
   const racetrack = new Racetrack(lines);
 
-  racetrack.print();
+  const graph = new Graph(racetrack);
+
+  const pathCount = dijkstra(graph);
+  console.log(pathCount);
 }
