@@ -1,4 +1,5 @@
 import { Graph } from "./graph.ts";
+import { Racetrack } from "./racetrack.ts";
 
 function dijkstra(graph: Graph): number {
   const queue: number[] = [];
@@ -59,5 +60,7 @@ if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const lines = text.split("\n");
 
-  console.log(lines.length);
+  const racetrack = new Racetrack(lines);
+
+  racetrack.print();
 }
