@@ -47,6 +47,10 @@ export class Racetrack {
     this.endPos = endPos;
   }
 
+  getSpace(pos: Pos): Space {
+    return this.spaces[pos.y][pos.x];
+  }
+
   print() {
     const changeChar = (line: string, index: number, char: string) => {
       return line.slice(0, index) + char + line.slice(index + 1);
