@@ -120,7 +120,7 @@ function findCheats(racetrack: Racetrack, dijkstraadGraph: Graph): Cheat[] {
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("example");
+  const text = await Deno.readTextFile("input");
   const lines = text.split("\n");
 
   const racetrack = new Racetrack(lines);
@@ -130,9 +130,13 @@ if (import.meta.main) {
   const pathCount = dijkstra(graph);
   console.log(pathCount);
 
-  const cheats = findCheats(racetrack, graph);
+  const cheats = findCheats(racetrack, graph).filter(c => c.potentialBenefit && c.potentialBenefit > 99);
 
+  console.log("Testing " + cheats.length + " cheats");
+
+  let i = 0;
   for (const cheat of cheats) {
+    console.log(i);
     graph.addCheat(cheat.wallPos);
 
     const newResult = dijkstra(graph);
@@ -140,6 +144,7 @@ if (import.meta.main) {
     cheat.pathWithCheat = newResult;
 
     graph.removeCheat();
+    i++;
   }
   
   
@@ -153,4 +158,7 @@ if (import.meta.main) {
 
   console.log();
   console.log(JSON.stringify(grouped));
+
+  const greatCheats = cheats.filter(c => c.pathWithCheat && pathCount - c.pathWithCheat >= 100);
+  console.log("Cheats with a benefit of at least 100:" + greatCheats.length);
 }
