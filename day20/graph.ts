@@ -96,11 +96,13 @@ export class Graph {
   }
 
   addCheat(pos: Pos) {
-    if (this.activeCheat !== undefined)
+    if (this.activeCheat !== undefined) {
       throw new Error("Another cheat already active");
-    
-    if (this.getSpace(pos) !== "wall")
+    }
+
+    if (this.getSpace(pos) !== "wall") {
       throw new Error(`Cheat position ${pos} is not a wall`);
+    }
 
     const vertex = new Vertex(pos);
     this.vertices[vertex.id] = vertex;
@@ -109,8 +111,9 @@ export class Graph {
   }
 
   removeCheat() {
-    if (this.activeCheat === undefined)
+    if (this.activeCheat === undefined) {
       throw new Error("No cheat active");
+    }
 
     this.vertices[this.activeCheat] = undefined;
     this.activeCheat = undefined;

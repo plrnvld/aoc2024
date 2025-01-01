@@ -5,11 +5,13 @@ import { Racetrack } from "./racetrack.ts";
 function dijkstra(graph: Graph): number {
   const stopAtTarget = false; // Measurements show it hardly makes a difference at this map to stop when the target is found
   const queue: number[] = [];
-  graph.vertices.forEach((v) => { if (v !== undefined) {
-    queue.push(v.id);
-    v.dist = Number.MAX_SAFE_INTEGER;
-    v.prev = undefined;
-  }});
+  graph.vertices.forEach((v) => {
+    if (v !== undefined) {
+      queue.push(v.id);
+      v.dist = Number.MAX_SAFE_INTEGER;
+      v.prev = undefined;
+    }
+  });
   const startVertex = graph.getVertex(graph.startVertexId);
 
   startVertex.dist = 0;
@@ -130,13 +132,17 @@ if (import.meta.main) {
   const pathCount = dijkstra(graph);
   console.log(pathCount);
 
-  const cheats = findCheats(racetrack, graph).filter(c => c.potentialBenefit && c.potentialBenefit > 99);
+  const cheats = findCheats(racetrack, graph).filter((c) =>
+    c.potentialBenefit && c.potentialBenefit >= 100
+  );
 
   console.log("Testing " + cheats.length + " cheats");
 
   let i = 0;
   for (const cheat of cheats) {
-    console.log(i);
+    if (i % 100 === 0) {
+      console.log(i);
+    }
     graph.addCheat(cheat.wallPos);
 
     const newResult = dijkstra(graph);
@@ -146,19 +152,14 @@ if (import.meta.main) {
     graph.removeCheat();
     i++;
   }
-  
-  
-  // for (const cheat of cheats) {
-  //   if (cheat.pathWithCheat && cheat.pathWithCheat < pathCount) {
-  //     console.log(JSON.stringify(cheat));
-  //   }
-  // }
 
-  const grouped = Object.groupBy(cheats, c => pathCount - c.pathWithCheat!);
+  const grouped = Object.groupBy(cheats, (c) => pathCount - c.pathWithCheat!);
 
   console.log();
   console.log(JSON.stringify(grouped));
 
-  const greatCheats = cheats.filter(c => c.pathWithCheat && pathCount - c.pathWithCheat >= 100);
+  const greatCheats = cheats.filter((c) =>
+    c.pathWithCheat && pathCount - c.pathWithCheat >= 100
+  );
   console.log("Cheats with a benefit of at least 100:" + greatCheats.length);
 }
