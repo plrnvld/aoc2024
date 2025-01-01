@@ -19,10 +19,12 @@ export class Vertex {
 export class Graph {
   width: number;
   height: number;
-  vertices: Vertex[];
+  vertices: (Vertex | undefined)[];
   racetrack: Racetrack;
   startVertexId: number;
   targetVertexId: number;
+
+  activeCheat: number | undefined;
 
   constructor(racetrack: Racetrack) {
     this.width = racetrack.width;
@@ -91,5 +93,26 @@ export class Graph {
     );
 
     return neighborIds.filter((id) => id !== undefined);
+  }
+
+  addCheat(pos: Pos) {
+    if (this.activeCheat !== undefined)
+      throw new Error("Another cheat already active");
+    
+    if (this.getSpace(pos) !== "wall")
+      throw new Error(`Cheat position ${pos} is not a wall`);
+
+    const vertex = new Vertex(pos);
+    this.vertices[vertex.id] = vertex;
+
+    this.activeCheat = vertex.id;
+  }
+
+  removeCheat() {
+    if (this.activeCheat === undefined)
+      throw new Error("No cheat active");
+
+    this.vertices[this.activeCheat] = undefined;
+    this.activeCheat = undefined;
   }
 }

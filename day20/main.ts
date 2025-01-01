@@ -3,12 +3,13 @@ import { Pos } from "./pos.ts";
 import { Racetrack } from "./racetrack.ts";
 
 function dijkstra(graph: Graph): number {
+  const stopAtTarget = false; // Measurements show it hardly makes a difference at this map to stop when the target is found
   const queue: number[] = [];
-  graph.vertices.forEach((v) => {
+  graph.vertices.forEach((v) => { if (v !== undefined) {
     queue.push(v.id);
     v.dist = Number.MAX_SAFE_INTEGER;
     v.prev = undefined;
-  });
+  }});
   const startVertex = graph.getVertex(graph.startVertexId);
 
   startVertex.dist = 0;
@@ -37,7 +38,7 @@ function dijkstra(graph: Graph): number {
     const neighbors = graph.neighbors(uId);
     const u = graph.getVertex(uId);
 
-    if (u.id === graph.targetVertexId) {
+    if (u.id === graph.targetVertexId && stopAtTarget) {
       return u.dist;
     }
 
@@ -64,23 +65,29 @@ class Cheat {
   start: Pos;
   end: Pos;
 
-  benefit: number | undefined;
+  pathWithCheat: number | undefined;
   potentialBenefit: number | undefined;
 
   constructor(start: Pos, end: Pos) {
     this.start = start;
     this.end = end;
   }
+
+  get wallPos(): Pos {
+    const midX = (this.start.x + this.end.x) / 2;
+    const midY = (this.start.y + this.end.y) / 2;
+    return new Pos(midX, midY);
+  }
 }
 
 function findCheats(racetrack: Racetrack, dijkstraadGraph: Graph): Cheat[] {
   const isEmpty = (pos: Pos) => {
-    return racetrack.getSpace(pos) === "empty"
-  }
+    return racetrack.getSpace(pos) === "empty";
+  };
 
   const isWall = (pos: Pos) => {
-    return racetrack.getSpace(pos) === "wall"
-  }
+    return racetrack.getSpace(pos) === "wall";
+  };
 
   const addWhenEmpty = (pos1: Pos, pos2: Pos) => {
     if (isEmpty(pos1) && isEmpty(pos2)) {
@@ -89,11 +96,12 @@ function findCheats(racetrack: Racetrack, dijkstraadGraph: Graph): Cheat[] {
       const vertex2 = dijkstraadGraph.getVertex(pos2.key);
       cheat.potentialBenefit = vertex2.dist - 2 - vertex1.dist; // It takes 2 steps to get from pos1 to pos2
 
-      if (cheat.potentialBenefit > 0)
+      if (cheat.potentialBenefit > 0) {
         cheats.push(cheat);
+      }
     }
-  }
-  
+  };
+
   const cheats: Cheat[] = [];
 
   for (let y = 1; y < racetrack.height - 1; y++) {
@@ -112,7 +120,7 @@ function findCheats(racetrack: Racetrack, dijkstraadGraph: Graph): Cheat[] {
 }
 
 if (import.meta.main) {
-  const text = await Deno.readTextFile("input");
+  const text = await Deno.readTextFile("example");
   const lines = text.split("\n");
 
   const racetrack = new Racetrack(lines);
@@ -124,5 +132,25 @@ if (import.meta.main) {
 
   const cheats = findCheats(racetrack, graph);
 
-  console.log("Num cheats: " + cheats.length);
+  for (const cheat of cheats) {
+    graph.addCheat(cheat.wallPos);
+
+    const newResult = dijkstra(graph);
+
+    cheat.pathWithCheat = newResult;
+
+    graph.removeCheat();
+  }
+  
+  
+  // for (const cheat of cheats) {
+  //   if (cheat.pathWithCheat && cheat.pathWithCheat < pathCount) {
+  //     console.log(JSON.stringify(cheat));
+  //   }
+  // }
+
+  const grouped = Object.groupBy(cheats, c => pathCount - c.pathWithCheat!);
+
+  console.log();
+  console.log(JSON.stringify(grouped));
 }
