@@ -46,6 +46,14 @@ export class Graph {
     }
   }
 
+  reverseGraph(): Graph {
+    const reversedGraph = new Graph(this.racetrack);
+    reversedGraph.startVertexId = this.targetVertexId;
+    reversedGraph.targetVertexId = this.startVertexId;
+
+    return reversedGraph;
+  }
+
   getVertex(id: number): Vertex {
     const vertex = this.vertices[id];
     if (vertex === undefined) {
