@@ -1,6 +1,5 @@
-import { Graph, Vertex } from "./graph.ts";
+import { Graph } from "./graph.ts";
 import { Racetrack } from "./racetrack.ts";
-import { findCheats } from "./cheat.ts";
 import { Pos } from "./pos.ts";
 
 function dijkstra(graph: Graph): number {
@@ -13,16 +12,16 @@ function dijkstra(graph: Graph): number {
       v.prev = undefined;
     }
   });
-  const startVertex = graph.getVertex(graph.startVertexId);
+  const startVertex = graph.getVertexOrError(graph.startVertexId);
 
   startVertex.dist = 0;
 
   while (queue.length > 0) {
-    let minDist = graph.getVertex(queue[0]).dist;
+    let minDist = graph.getVertexOrError(queue[0]).dist;
     let minIndex = 0;
 
     for (let i = 1; i < queue.length; i++) {
-      const currDist = graph.getVertex(queue[i]).dist;
+      const currDist = graph.getVertexOrError(queue[i]).dist;
       if (currDist < minDist) {
         minDist = currDist;
         minIndex = i;
@@ -39,7 +38,7 @@ function dijkstra(graph: Graph): number {
     const uId = queue.pop()!;
 
     const neighbors = graph.neighbors(uId);
-    const u = graph.getVertex(uId);
+    const u = graph.getVertexOrError(uId);
 
     if (u.id === graph.targetVertexId && stopAtTarget) {
       return u.dist;
@@ -52,7 +51,7 @@ function dijkstra(graph: Graph): number {
       }
 
       const alt = u.dist + 1;
-      const neighbor = graph.getVertex(neighborId);
+      const neighbor = graph.getVertexOrError(neighborId);
 
       if (alt < neighbor.dist) {
         neighbor.dist = alt;
@@ -61,27 +60,73 @@ function dijkstra(graph: Graph): number {
     }
   }
 
-  return graph.getVertex(graph.targetVertexId).dist;
+  return graph.getVertexOrError(graph.targetVertexId).dist;
 }
 
-function getPath(dijkstradedGraph: Graph, targetId: number): Vertex[] {
-  const targetVertex = dijkstradedGraph.getVertex(targetId);
-  let curr = targetVertex;
+function findGreatCheatsFrom(
+  startPos: Pos,
+  graph: Graph,
+  reversedGraph: Graph,
+  uncheatedScore: number,
+  greatCheatLimit: number,
+): number {
+  let numGoodCheats = 0;
 
-  const reversedPath: Vertex[] = [];
-  while (curr.prev !== undefined) {
-    reversedPath.push(curr);
-    curr = curr.prev;
+  const topLeft = new Pos(startPos.x - 20, startPos.y - 20);
+  for (let y = 0; y < 41; y++) {
+    for (let x = 0; x < 41; x++) {
+      const cheatEnd = new Pos(topLeft.x + x, topLeft.y + y);
+      const benefit = calcBenefit(
+        startPos,
+        cheatEnd,
+        graph,
+        reversedGraph,
+        uncheatedScore,
+      );
+      if (benefit !== undefined && benefit >= greatCheatLimit) {
+        numGoodCheats += 1;
+      }
+    }
   }
 
-  reversedPath.push(curr);
-  return reversedPath.toReversed();
+  return numGoodCheats;
 }
 
-function calcBenefit(startCheat: Pos, endCheat: Pos | undefined, graph: Graph, reversedGraph: Graph, uncheatedScore: number): number | undefined {
-  // ######### Work in progress
+function calcBenefit(
+  startCheat: Pos,
+  endCheat: Pos | undefined,
+  graph: Graph,
+  reversedGraph: Graph,
+  uncheatedScore: number,
+): number | undefined {
+  if (endCheat === undefined) {
+    return undefined;
+  }
 
-  return undefined;
+  if (
+    startCheat.x < 0 || startCheat.x >= graph.width ||
+    startCheat.y < 0 || startCheat.y >= graph.height ||
+    endCheat.x < 0 || endCheat.x >= graph.width ||
+    endCheat.y < 0 || endCheat.y >= graph.height ||
+    graph.getSpace(startCheat) === "wall" || graph.getSpace(endCheat) === "wall"
+  ) {
+    return undefined;
+  }
+
+  const manhattanDistance = startCheat.manhattanDistanceTo(endCheat);
+  if (manhattanDistance > 20) {
+    return undefined;
+  }
+
+  const startVertex = graph.getVertexOrUndefined(startCheat.key);
+  const endVertex = reversedGraph.getVertexOrUndefined(endCheat.key);
+  if (startVertex === undefined || endVertex === undefined) {
+    return undefined;
+  }
+
+  const cheatedPathLength = startVertex.dist + endVertex.dist +
+    manhattanDistance;
+  return uncheatedScore - cheatedPathLength;
 }
 
 if (import.meta.main) {
@@ -94,47 +139,23 @@ if (import.meta.main) {
   const reversedGraph = graph.reverseGraph();
 
   const pathCount = dijkstra(graph);
-  const reversedPathCount = dijkstra(reversedGraph);
+  const _ = dijkstra(reversedGraph);
 
-  const path = getPath(graph, graph.targetVertexId);
+  let greatCheats = 0;
 
-  for (const vertex of path) {
-    const otherVertex = reversedGraph.getVertex(vertex.id);
-    const sum = vertex.dist + otherVertex.dist;
-    console.log(`>  ${sum}`);
+  for (let y = 0; y < racetrack.width; y++) {
+    for (let x = 0; x < racetrack.height; x++) {
+      const posToCheatFrom = new Pos(x, y);
+      const greatCheatLimit = 100;
+      greatCheats += findGreatCheatsFrom(
+        posToCheatFrom,
+        graph,
+        reversedGraph,
+        pathCount,
+        greatCheatLimit,
+      );
+    }
   }
 
-  console.log(pathCount);
-  console.log(reversedPathCount);
-
-  const cheats = findCheats(racetrack, graph).filter((c) =>
-    c.potentialBenefit && c.potentialBenefit >= 100
-  );
-
-  console.log("Testing " + cheats.length + " cheats");
-
-  // let i = 0;
-  // for (const cheat of cheats) {
-  //   if (i % 100 === 0) {
-  //     console.log(i);
-  //   }
-  //   graph.addCheat(cheat.wallPos);
-
-  //   const newResult = dijkstra(graph);
-
-  //   cheat.pathWithCheat = newResult;
-
-  //   graph.removeCheat();
-  //   i++;
-  // }
-
-  // const grouped = Object.groupBy(cheats, (c) => pathCount - c.pathWithCheat!);
-
-  // console.log();
-  // console.log(JSON.stringify(grouped));
-
-  const greatCheats = cheats.filter((c) =>
-    c.pathWithCheat && pathCount - c.pathWithCheat >= 100
-  );
-  console.log("Cheats with a benefit of at least 100:" + greatCheats.length);
+  console.log(greatCheats);
 }

@@ -36,8 +36,8 @@ export function findCheats(
   const addWhenEmpty = (pos1: Pos, pos2: Pos) => {
     if (isEmpty(pos1) && isEmpty(pos2)) {
       const cheat = new Cheat(pos1, pos2);
-      const vertex1 = dijkstraadGraph.getVertex(pos1.key);
-      const vertex2 = dijkstraadGraph.getVertex(pos2.key);
+      const vertex1 = dijkstraadGraph.getVertexOrError(pos1.key);
+      const vertex2 = dijkstraadGraph.getVertexOrError(pos2.key);
       cheat.potentialBenefit = vertex2.dist - 2 - vertex1.dist; // It takes 2 steps to get from pos1 to pos2
 
       if (cheat.potentialBenefit > 0) {

@@ -54,13 +54,17 @@ export class Graph {
     return reversedGraph;
   }
 
-  getVertex(id: number): Vertex {
+  getVertexOrError(id: number): Vertex {
     const vertex = this.vertices[id];
     if (vertex === undefined) {
-      throw new Error("Vertex with id " + id + " not found");
+      throw new Error(`No vertex found for id = ${id}.`);
     }
 
     return vertex;
+  }
+
+  getVertexOrUndefined(id: number): Vertex | undefined {
+    return this.vertices[id];
   }
 
   getSpace(pos: Pos): Space | undefined {
