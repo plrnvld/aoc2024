@@ -1,6 +1,7 @@
 import { Graph, Vertex } from "./graph.ts";
 import { Racetrack } from "./racetrack.ts";
 import { findCheats } from "./cheat.ts";
+import { Pos } from "./pos.ts";
 
 function dijkstra(graph: Graph): number {
   const stopAtTarget = false; // Measurements show it hardly makes a difference at this map to stop when the target is found
@@ -75,6 +76,12 @@ function getPath(dijkstradedGraph: Graph, targetId: number): Vertex[] {
 
   reversedPath.push(curr);
   return reversedPath.toReversed();
+}
+
+function calcBenefit(startCheat: Pos, endCheat: Pos | undefined, graph: Graph, reversedGraph: Graph, uncheatedScore: number): number | undefined {
+  // ######### Work in progress
+
+  return undefined;
 }
 
 if (import.meta.main) {

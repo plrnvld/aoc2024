@@ -27,6 +27,10 @@ export class Pos {
     return new Pos(this.x, this.y + 1);
   }
 
+  manhattanDistanceTo(other: Pos): number {
+    return Math.abs(this.x - other.x) + Math.abs(this.y - other.y);
+  }
+
   static fromLine(line: string): Pos {
     const parts = line.split(",");
     const x = parseInt(parts[0]);
