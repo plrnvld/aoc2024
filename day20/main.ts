@@ -1,4 +1,4 @@
-import { Graph } from "./graph.ts";
+import { Graph, Vertex } from "./graph.ts";
 import { Racetrack } from "./racetrack.ts";
 import { findCheats } from "./cheat.ts";
 
@@ -63,6 +63,20 @@ function dijkstra(graph: Graph): number {
   return graph.getVertex(graph.targetVertexId).dist;
 }
 
+function getPath(dijkstradedGraph: Graph, targetId: number): Vertex[] {
+  const targetVertex = dijkstradedGraph.getVertex(targetId);
+  let curr = targetVertex;
+
+  const reversedPath: Vertex[] = [];
+  while (curr.prev !== undefined) {
+    reversedPath.push(curr);
+    curr = curr.prev;
+  }
+
+  reversedPath.push(curr);
+  return reversedPath.toReversed();
+}
+
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const lines = text.split("\n");
@@ -75,6 +89,14 @@ if (import.meta.main) {
   const pathCount = dijkstra(graph);
   const reversedPathCount = dijkstra(reversedGraph);
 
+  const path = getPath(graph, graph.targetVertexId);
+
+  for (const vertex of path) {
+    const otherVertex = reversedGraph.getVertex(vertex.id);
+    const sum = vertex.dist + otherVertex.dist;
+    console.log(`>  ${sum}`);
+  }
+
   console.log(pathCount);
   console.log(reversedPathCount);
 
@@ -84,25 +106,25 @@ if (import.meta.main) {
 
   console.log("Testing " + cheats.length + " cheats");
 
-  let i = 0;
-  for (const cheat of cheats) {
-    if (i % 100 === 0) {
-      console.log(i);
-    }
-    graph.addCheat(cheat.wallPos);
+  // let i = 0;
+  // for (const cheat of cheats) {
+  //   if (i % 100 === 0) {
+  //     console.log(i);
+  //   }
+  //   graph.addCheat(cheat.wallPos);
 
-    const newResult = dijkstra(graph);
+  //   const newResult = dijkstra(graph);
 
-    cheat.pathWithCheat = newResult;
+  //   cheat.pathWithCheat = newResult;
 
-    graph.removeCheat();
-    i++;
-  }
+  //   graph.removeCheat();
+  //   i++;
+  // }
 
-  const grouped = Object.groupBy(cheats, (c) => pathCount - c.pathWithCheat!);
+  // const grouped = Object.groupBy(cheats, (c) => pathCount - c.pathWithCheat!);
 
-  console.log();
-  console.log(JSON.stringify(grouped));
+  // console.log();
+  // console.log(JSON.stringify(grouped));
 
   const greatCheats = cheats.filter((c) =>
     c.pathWithCheat && pathCount - c.pathWithCheat >= 100
