@@ -9,6 +9,7 @@ export class Directions {
   numRight: number;
   numUp: number;
   numDown: number;
+  validControlOptions: Controls[][];
 
   constructor(
     from: string,
@@ -17,6 +18,7 @@ export class Directions {
     numRight: number,
     numUp: number,
     numDown: number,
+    numPad: NumPad,
   ) {
     this.from = from;
     this.to = to;
@@ -24,6 +26,23 @@ export class Directions {
     this.numRight = numRight;
     this.numUp = numUp;
     this.numDown = numDown;
+
+    this.validControlOptions = this.#getValidControlsPermutations(numPad);
+  }
+
+  #getValidControlsPermutations(numPad: NumPad): Controls[][] {
+    const allControlsPermutations = this.#getControlsPermutations();
+
+    const validControlsPermutations: Controls[][] = [];
+
+    for (const controlsList of allControlsPermutations) {
+      const path = numPad.simulatePath(this.from, controlsList);
+      if (!path.some((step) => step === "X")) {
+        validControlsPermutations.push(controlsList);
+      }
+    }
+
+    return validControlsPermutations;
   }
 
   // Also returns permutations passing the empty gap on the num pad, needs to be filtered out after
@@ -32,8 +51,11 @@ export class Directions {
     const nonZeroLists = controlsLists.filter((l) => l.length > 0);
     const nonZeroCount = nonZeroLists.length;
 
-    if (nonZeroCount === 0 || nonZeroCount === 1) {
-      return controlsLists.concat();
+    if (nonZeroCount === 0)
+        return [];
+        
+    if (nonZeroCount === 1) {
+      return nonZeroLists;
     }
 
     if (nonZeroCount === 2) {
@@ -121,6 +143,6 @@ export class Directions {
     const numUp = Math.max(start.y - end.y, 0);
     const numDown = Math.max(end.y - start.y, 0);
 
-    return new Directions(from, to, numLeft, numRight, numUp, numDown);
+    return new Directions(from, to, numLeft, numRight, numUp, numDown, numPad);
   }
 }
