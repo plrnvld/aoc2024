@@ -33,10 +33,12 @@ function calcBestSequence(input: string, numRobots: number, numPad: Pad, arrowPa
   const numPadOptions = sequenceToTypePad(input, numPad);
 
   let numPadInput = numPadOptions.toStrings();
-  let numPadSolutions = [];
+  let numPadSolutions: string[] = [];
 
   for (let i = 0; i < numRobots; i++) {
     numPadSolutions = [];
+
+    let shortestSoFar = Number.MAX_SAFE_INTEGER;
 
     for (const numPadOptionString of numPadInput) {
       const options = sequenceToTypePad(
@@ -44,17 +46,28 @@ function calcBestSequence(input: string, numRobots: number, numPad: Pad, arrowPa
         arrowPad,
       );
 
+      const optionsString = options.toStrings();
+      const shortestFromThisInput = lengthShortest(optionsString);
+      shortestSoFar = Math.min(shortestSoFar, shortestFromThisInput);
+
       for (const result of options.toStrings()) {
-        numPadSolutions.push(result);
+        if (result.length === shortestSoFar)
+          numPadSolutions.push(result);
       }
     }
+
+    numPadSolutions = numPadSolutions.filter(s => s.length === shortestSoFar);
 
     numPadInput = numPadSolutions;
   }
 
   console.log();
   console.log("*****");
-    
+  
+  console.log(numPadSolutions.join("\n"));
+  console.log();
+  console.log();
+
   const shortest = lengthShortest(numPadSolutions);
   const inputNum = parseInt(input.split("").filter(c => c >= '0' && c <= '9').join(""));
   const outcome = inputNum * shortest;
