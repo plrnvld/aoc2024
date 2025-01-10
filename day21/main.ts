@@ -29,41 +29,33 @@ function lengthShortest(texts: string[]): number {
   return res;
 }
 
-function calcBestSequence(input: string, numPad: Pad, arrowPad: Pad): number {
+function calcBestSequence(input: string, numRobots: number, numPad: Pad, arrowPad: Pad): number {
   const numPadOptions = sequenceToTypePad(input, numPad);
 
-  const numPadOptionsStrings = numPadOptions.toStrings();
+  let numPadInput = numPadOptions.toStrings();
+  let numPadSolutions = [];
 
-  const allNumPad1Solutions = [];
+  for (let i = 0; i < numRobots; i++) {
+    numPadSolutions = [];
 
-  for (const numPadOptionString of numPadOptionsStrings) {
-    const options = sequenceToTypePad(
-      numPadOptionString,
-      arrowPad,
-    );
+    for (const numPadOptionString of numPadInput) {
+      const options = sequenceToTypePad(
+        numPadOptionString,
+        arrowPad,
+      );
 
-    for (const result of options.toStrings()) {
-      allNumPad1Solutions.push(result);
+      for (const result of options.toStrings()) {
+        numPadSolutions.push(result);
+      }
     }
-  }
 
-  const allNumPad2Solutions = [];
-
-  for (const numPadOptionString of allNumPad1Solutions) {
-    const options = sequenceToTypePad(
-      numPadOptionString,
-      arrowPad,
-    );
-
-    for (const result of options.toStrings()) {
-      allNumPad2Solutions.push(result);
-    }
+    numPadInput = numPadSolutions;
   }
 
   console.log();
   console.log("*****");
     
-  const shortest = lengthShortest(allNumPad2Solutions);
+  const shortest = lengthShortest(numPadSolutions);
   const inputNum = parseInt(input.split("").filter(c => c >= '0' && c <= '9').join(""));
   const outcome = inputNum * shortest;
   console.log(`${shortest} x ${inputNum} = ${outcome}`);
@@ -87,7 +79,7 @@ if (import.meta.main) {
   let sum = 0;
 
   for (const input of inputLines)
-    sum += calcBestSequence(input, numPad, arrowPad);
+    sum += calcBestSequence(input, 2, numPad, arrowPad);
 
   console.log(sum);
 }
