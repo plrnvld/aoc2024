@@ -1,6 +1,6 @@
-import { NumPad } from "./numpad.ts";
+import { Pad } from "./pad.ts";
 
-export type Controls = "^" | "v" | "<" | ">" | "A";
+export type ArrowKey = "^" | "v" | "<" | ">" | "A";
 
 export class Directions {
   from: string;
@@ -9,7 +9,7 @@ export class Directions {
   numRight: number;
   numUp: number;
   numDown: number;
-  validControlOptions: Controls[][];
+  validControlOptions: ArrowKey[][];
 
   constructor(
     from: string,
@@ -18,7 +18,7 @@ export class Directions {
     numRight: number,
     numUp: number,
     numDown: number,
-    numPad: NumPad,
+    padSimulator: Pad,
   ) {
     this.from = from;
     this.to = to;
@@ -27,16 +27,16 @@ export class Directions {
     this.numUp = numUp;
     this.numDown = numDown;
 
-    this.validControlOptions = this.#getValidControlsPermutations(numPad);
+    this.validControlOptions = this.#getValidControlsPermutations(padSimulator);
   }
 
-  #getValidControlsPermutations(numPad: NumPad): Controls[][] {
+  #getValidControlsPermutations(padSimulator: Pad): ArrowKey[][] {
     const allControlsPermutations = this.#getControlsPermutations();
 
-    const validControlsPermutations: Controls[][] = [];
+    const validControlsPermutations: ArrowKey[][] = [];
 
     for (const controlsList of allControlsPermutations) {
-      const path = numPad.simulatePath(this.from, controlsList);
+      const path = padSimulator.simulatePath(this.from, controlsList);
       if (!path.some((step) => step === "X")) {
         validControlsPermutations.push(controlsList);
       }
@@ -46,14 +46,15 @@ export class Directions {
   }
 
   // Also returns permutations passing the empty gap on the num pad, needs to be filtered out after
-  #getControlsPermutations(): Controls[][] {
+  #getControlsPermutations(): ArrowKey[][] {
     const controlsLists = this.#getControlsTuple();
     const nonZeroLists = controlsLists.filter((l) => l.length > 0);
     const nonZeroCount = nonZeroLists.length;
 
-    if (nonZeroCount === 0)
-        return [];
-        
+    if (nonZeroCount === 0) {
+      return [];
+    }
+
     if (nonZeroCount === 1) {
       return nonZeroLists;
     }
@@ -115,10 +116,12 @@ export class Directions {
       }
     }
 
-    throw new Error(`Cannot handle ${nonZeroCount} non-zero directions`);
+    throw new Error(
+      `Cannot handle this case of ${nonZeroCount} non-zero directions`,
+    );
   }
 
-  #getControlsTuple(): [Controls[], Controls[], Controls[], Controls[]] {
+  #getControlsTuple(): [ArrowKey[], ArrowKey[], ArrowKey[], ArrowKey[]] {
     return [
       Array(this.numLeft).fill("<"),
       Array(this.numRight).fill(">"),
@@ -127,9 +130,9 @@ export class Directions {
     ];
   }
 
-  static fromStartEnd(from: string, to: string, numPad: NumPad): Directions {
-    const fromPos = numPad.posMap.get(from);
-    const toPos = numPad.posMap.get(to);
+  static fromStartEnd(from: string, to: string, padSimulator: Pad): Directions {
+    const fromPos = padSimulator.posMap.get(from);
+    const toPos = padSimulator.posMap.get(to);
 
     if (fromPos === undefined || toPos === undefined) {
       throw new Error(`fromStartEnd received invalid from/to`);
@@ -143,6 +146,14 @@ export class Directions {
     const numUp = Math.max(start.y - end.y, 0);
     const numDown = Math.max(end.y - start.y, 0);
 
-    return new Directions(from, to, numLeft, numRight, numUp, numDown, numPad);
+    return new Directions(
+      from,
+      to,
+      numLeft,
+      numRight,
+      numUp,
+      numDown,
+      padSimulator,
+    );
   }
 }

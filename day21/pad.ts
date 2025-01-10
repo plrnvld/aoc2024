@@ -1,7 +1,7 @@
-import { Controls, Directions } from "./directions.ts";
+import { ArrowKey, Directions } from "./directions.ts";
 import { Pos } from "./pos.ts";
 
-export class NumPad {
+export class Pad {
   lines: string[];
   posMap: Map<string, Pos>;
   directionsMap: Map<string, Directions>;
@@ -20,7 +20,7 @@ export class NumPad {
     this.directionsMap = this.buildDirectionMap(this.posMap);
   }
 
-  simulatePath(startKey: string, controls: Controls[]): string[] {
+  simulatePath(startKey: string, controls: ArrowKey[]): string[] {
     const startPos = this.posMap.get(startKey);
     if (startPos === undefined) {
       throw new Error(`position for ${startKey} is undefined`);
@@ -42,13 +42,13 @@ export class NumPad {
         currPos = currPos.down;
       }
 
-      simulatedPath.push(this.getNumKey(currPos));
+      simulatedPath.push(this.getPadKey(currPos));
     }
 
     return simulatedPath;
   }
 
-  getNumKey(pos: Pos): string {
+  getPadKey(pos: Pos): string {
     return this.lines[pos.y][pos.x];
   }
 

@@ -1,13 +1,13 @@
-import { NumPad } from "./numpad.ts";
+import { Pad } from "./pad.ts";
 
 if (import.meta.main) {
-  const numPadText = await Deno.readTextFile("numpad");
+  const numPadText = await Deno.readTextFile("arrowpad");
   const numPadLines = numPadText.split("\n");
-  const numPad = new NumPad(numPadLines);
+  const pad = new Pad(numPadLines);
 
   // const text = await Deno.readTextFile("example");
   // const lines = text.split("\n");
 
-  console.log(numPad.directionsMap);
-  console.log(numPad.directionsMap.keys().toArray().length);
+  console.log(pad.directionsMap);
+  console.log(pad.directionsMap.keys().toArray().length);
 }
