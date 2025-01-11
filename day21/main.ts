@@ -149,3 +149,5 @@ if (import.meta.main) {
 
   console.log(sum);
 }
+
+// Part 1: 238078
