@@ -33,7 +33,7 @@ function lengthShortest(texts: string[]): number {
   return res;
 }
 
-function calcArrowPadSolutions(
+ function calcArrowPadSolutions(
   inputs: string[],
   numRobots: number,
   arrowPad: Pad,
@@ -56,18 +56,16 @@ function calcArrowPadSolutions(
 
         if (numArrowChanges <= minArrowChanges) {
           minArrowChanges = numArrowChanges;
-              
+          solutions.push(solution); 
         }
-
-        solutions.push(solution); 
       }
     }
 
-    const unfilteredLength = solutions.length;
+    // const unfilteredLength = solutions.length;
     solutions = solutions.filter(s => arrowChanges(s) === minArrowChanges);
-    const filteredLength = solutions.length;
+    // const filteredLength = solutions.length;
 
-    console.log(` > Filtered ${filteredLength} of ${unfilteredLength}`);
+    // console.log(` > Filtered ${filteredLength} of ${unfilteredLength}`);
     inputForRobot = solutions;
   }
 
