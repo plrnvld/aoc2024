@@ -21,7 +21,7 @@ export class ControlOptionsList {
       const newAggr: string[] = [];
       for (const ag of aggr) {
         if (this.list[pos].length === 0) {
-          newAggr.push(ag + "A"); // Active when youre already there
+          newAggr.push(ag + "A"); // Activate when the robot is already on the right spot
         } else {
           for (const option of this.list[pos]) {
             newAggr.push(ag.concat(option));

@@ -10,6 +10,7 @@ export class Directions {
   numUp: number;
   numDown: number;
   validControlOptions: ArrowKey[][];
+  distSquared: number;
 
   constructor(
     from: string,
@@ -28,6 +29,9 @@ export class Directions {
     this.numDown = numDown;
 
     this.validControlOptions = this.#getValidControlsPermutations(padSimulator);
+    this.distSquared = this.validControlOptions.length === 0
+      ? 0
+      : this.validControlOptions[0].length * this.validControlOptions[0].length;
   }
 
   #getValidControlsPermutations(padSimulator: Pad): ArrowKey[][] {

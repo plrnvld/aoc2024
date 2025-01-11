@@ -33,7 +33,7 @@ function lengthShortest(texts: string[]): number {
   return res;
 }
 
- function calcArrowPadSolutions(
+function calcArrowPadSolutions(
   inputs: string[],
   numRobots: number,
   arrowPad: Pad,
@@ -56,14 +56,25 @@ function lengthShortest(texts: string[]): number {
 
         if (numArrowChanges <= minArrowChanges) {
           minArrowChanges = numArrowChanges;
-          solutions.push(solution); 
+          solutions.push(solution);
         }
       }
     }
 
-    // const unfilteredLength = solutions.length;
-    solutions = solutions.filter(s => arrowChanges(s) === minArrowChanges);
-    // const filteredLength = solutions.length;
+    const unfilteredLength = solutions.length;
+    solutions = solutions.filter((s) => arrowChanges(s) === minArrowChanges);
+
+    let minDistSquared = Number.MAX_SAFE_INTEGER;
+    for (let i = 0; i < solutions.length; i++) {
+      const costSquared = distCostSquared(solutions[i], arrowPad);
+      minDistSquared = Math.min(costSquared, minDistSquared);
+    }
+
+    solutions = solutions.filter((s) =>
+      distCostSquared(s, arrowPad) === minDistSquared
+    );
+
+    const filteredLength = solutions.length;
 
     // console.log(` > Filtered ${filteredLength} of ${unfilteredLength}`);
     inputForRobot = solutions;
@@ -115,6 +126,18 @@ function arrowChanges(solution: string): number {
   }
 
   return changes;
+}
+
+function distCostSquared(solution: string, pad: Pad): number {
+  let costSquared = 0;
+
+  for (let i = 0; i < solution.length - 1; i++) {
+    const pair = solution.slice(i, i + 2);
+    const directions = pad.directionsMap.get(pair)!;
+    costSquared += directions.distSquared;
+  }
+
+  return costSquared;
 }
 
 if (import.meta.main) {
