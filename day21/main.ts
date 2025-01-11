@@ -43,6 +43,7 @@ function calcArrowPadSolutions(
 
   for (let robot = 1; robot <= numRobots; robot++) {
     solutions = [];
+    let minArrowChanges = Number.MAX_SAFE_INTEGER;
 
     for (const input of inputForRobot) {
       const options = sequenceToType(
@@ -50,11 +51,23 @@ function calcArrowPadSolutions(
         arrowPad,
       );
 
-      for (const result of options.toStrings()) {
-        solutions.push(result);
+      for (const solution of options.toStrings()) {
+        const numArrowChanges = arrowChanges(solution);
+
+        if (numArrowChanges <= minArrowChanges) {
+          minArrowChanges = numArrowChanges;
+              
+        }
+
+        solutions.push(solution); 
       }
     }
 
+    const unfilteredLength = solutions.length;
+    solutions = solutions.filter(s => arrowChanges(s) === minArrowChanges);
+    const filteredLength = solutions.length;
+
+    console.log(` > Filtered ${filteredLength} of ${unfilteredLength}`);
     inputForRobot = solutions;
   }
 
@@ -89,6 +102,23 @@ function calcBestSequence(
   return outcome;
 }
 
+function arrowChanges(solution: string): number {
+  let changes = 0;
+
+  let c = solution[0];
+
+  for (let i = 1; i < solution.length; i++) {
+    const newC = solution[i];
+
+    if (newC !== c) {
+      c = newC;
+      changes += 1;
+    }
+  }
+
+  return changes;
+}
+
 if (import.meta.main) {
   const numPadText = await Deno.readTextFile("numpad");
   const numPadLines = numPadText.split("\n");
@@ -107,13 +137,13 @@ if (import.meta.main) {
   for (const input of inputLines) {
     sum += calcBestSequence(input, 2, numPad, arrowPad);
   }
-  // let solutions = calcArrowPadSolutions(["^<"], 2, arrowPad);
+  // let solutions = calcArrowPadSolutions(["^<"], 3, arrowPad);
   // const shortestLength = lengthShortest(solutions);
   // const unfilteredLength = solutions.length;
   // //solutions = solutions.filter(s => s.length === shortestLength).toSorted();
   // const filteredLength = solutions.length;
 
-  // console.log(solutions.join("\n"));
+  // console.log(solutions.map(s => `${s} (${arrowChanges(s)})`).join("\n"));
   // console.log(`Shortest length ` + shortestLength);
   // console.log(`Remaining ${filteredLength} of ${unfilteredLength}`);
 
