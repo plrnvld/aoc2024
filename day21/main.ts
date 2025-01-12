@@ -57,7 +57,7 @@ function getNextSliceIndex(input: string, minPartSize: number): number {
 }
 
 function cutInPartsEndingOnA(input: string): string[] {
-  const minPartSize = 50;
+  const minPartSize = 500;
   const parts: string[] = [];
   let remaining = input;
 
@@ -165,7 +165,7 @@ if (import.meta.main) {
   let sum = 0;
 
   for (const input of inputLines) {
-    sum += calcBestSequence(input, 15, numPad, arrowPad);
+    sum += calcBestSequence(input, 18, numPad, arrowPad);
   }
   // <vA<AA>>^AvAA^<A>Av<<A>A^>Av<<A>>^AvAA^<A>A
   // <vA<AA>>^AvAA^<A>Av<<A>A + ^>Av<<A>>^AvAA^<A>A
