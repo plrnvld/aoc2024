@@ -55,4 +55,19 @@ export class ControlOptionsList {
 
     return aggr;
   }
+
+  toStringsOptimized(): string[] {
+    const aggr: string[] = [];
+
+    for (let pos = 0; pos < this.list.length; pos++) {
+      const curr = this.list[pos][0];
+
+      if (this.list[pos].length === 0)
+        aggr.push("A");
+      else 
+        aggr.push(curr);
+    }
+
+    return [aggr.join("")];
+  }
 }

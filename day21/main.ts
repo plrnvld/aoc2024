@@ -70,7 +70,7 @@ function calcArrowPadSolutions(
       );
 
       for (
-        const solution of findBestSequencesToUse(options.toStrings(), arrowPad)
+        const solution of findBestSequencesToUse(options.toStringsOptimized(), arrowPad)
       ) {
         solutions.push(solution);
       }
