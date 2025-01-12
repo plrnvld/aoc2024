@@ -4,6 +4,7 @@ import { Pad } from "./pad.ts";
 function sequenceToType(
   keys: string,
   pad: Pad,
+  optimize: boolean
 ): ControlOptionsList {
   const directionsList = new ControlOptionsList();
 
@@ -17,7 +18,7 @@ function sequenceToType(
     }
 
     const optionsToConsider = directionsOptions.validControlOptions;
-    directionsList.push(optionsToConsider);
+    directionsList.push(optionsToConsider, pad, optimize);
   }
 
   return directionsList;
@@ -65,6 +66,7 @@ function calcArrowPadSolutions(
       const options = sequenceToType(
         input,
         arrowPad,
+        true // ###### Continue here, how does optimization work better
       );
 
       for (
@@ -92,7 +94,7 @@ function calcBestSequence(
   numPad: Pad,
   arrowPad: Pad,
 ): number {
-  const numPadOptions = sequenceToType(input, numPad);
+  const numPadOptions = sequenceToType(input, numPad, false);
 
   const numPadInputs = numPadOptions.toStrings();
   const solutions = calcArrowPadSolutions(numPadInputs, numRobots, arrowPad);
@@ -114,7 +116,7 @@ function calcBestSequence(
   return outcome;
 }
 
-function distCostSquared(solution: string, pad: Pad): number {
+export function distCostSquared(solution: string, pad: Pad): number {
   let costSquared = 0;
 
   for (let i = 0; i < solution.length - 1; i++) {
@@ -142,7 +144,7 @@ if (import.meta.main) {
   let sum = 0;
 
   for (const input of inputLines) {
-    sum += calcBestSequence(input, 2, numPad, arrowPad);
+    sum += calcBestSequence(input, 12, numPad, arrowPad);
   }
   // let solutions = calcArrowPadSolutions(["<vA<AA>>^AvAA^<A>Av<<A>A^>Av<<A>>^AvAA^<A>A"], 1, arrowPad);
   // const shortestLength = lengthShortest(solutions);

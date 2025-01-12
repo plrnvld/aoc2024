@@ -1,4 +1,6 @@
 import { ArrowKey } from "./directions.ts";
+import { distCostSquared } from "./main.ts";
+import { Pad } from "./pad.ts";
 
 export class ControlOptionsList {
   list: string[][];
@@ -7,11 +9,30 @@ export class ControlOptionsList {
     this.list = [];
   }
 
-  push(controlOptions: ArrowKey[][]) {
+  push(controlOptions: ArrowKey[][], pad: Pad, optimize: boolean) {
     const arrowKeysAsStrings = controlOptions.map((arrows) =>
       arrows.join("") + "A"
     ); // Active all control options
-    this.list.push(arrowKeysAsStrings);
+
+    if (!optimize || arrowKeysAsStrings.length === 0) {
+      this.list.push(arrowKeysAsStrings);
+      return;
+    }
+
+    // ##### Explore optimization
+    let minDistCostSquared = Number.MAX_SAFE_INTEGER;
+    let bestOptions: string[] = [];
+
+    for (let i = 0; i < arrowKeysAsStrings.length; i++) {
+      const curr = arrowKeysAsStrings[i];
+      const distSquared = distCostSquared(curr, pad);
+      if (distSquared < minDistCostSquared) {
+        minDistCostSquared = distSquared;
+        bestOptions = [curr];
+      }
+    }
+
+    this.list.push(bestOptions);
   }
 
   toStrings(): string[] {
