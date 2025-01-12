@@ -57,31 +57,33 @@ function getNextSliceIndex(input: string, minPartSize: number): number {
 }
 
 function cutInPartsEndingOnA(sequencePart: SequencePart): SequencePart[] {
-  const minPartSize = 10000;
+  const minPartSize = 100;
   const parts: SequencePart[] = [];
   let remaining = sequencePart.part;
 
   let nextSliceIndex = getNextSliceIndex(remaining, minPartSize);
 
   while (remaining.length > 0) {
-    const nextPart = new SequencePart(remaining.slice(0, nextSliceIndex), sequencePart.robotLevel);
+    const nextPart = new SequencePart(remaining.slice(0, nextSliceIndex), sequencePart.robotLevel, true);
     remaining = remaining.slice(nextSliceIndex);
     parts.push(nextPart);
 
     nextSliceIndex = getNextSliceIndex(remaining, minPartSize);
   }
 
-  console.log(` > Cutting into ${parts.length} parts`);
+  // console.log(` > Cutting into ${parts.length} parts`);
   return parts;
 }
 
 class SequencePart {
   robotLevel: number;
   part: string;
+  isCut: boolean;
 
-  constructor(part: string, robotLevel: number) {
+  constructor(part: string, robotLevel: number, isCut: boolean) {
     this.part = part;
     this.robotLevel = robotLevel;
+    this.isCut = isCut;
   }
 }
 
@@ -101,32 +103,73 @@ function processInputInParts(sequencePart: SequencePart, arrowPad: Pad): Sequenc
     partialResults.push(options.toStringsOptimized());
   }
 
-  return new SequencePart(partialResults.join(""), level + 1);
+  return new SequencePart(partialResults.join(""), level + 1, false);
 }
 
 function calcArrowPadBestSolution(
   inputs: string[],
   numRobots: number,
   arrowPad: Pad,
-): SequencePart {
+): number {
+  const firstLevelSequences = inputs.map(i => new SequencePart(i, 0, false));
+  
   let outcomes: SequencePart[] = [];
-  let sequencePartsForRobot = inputs.map(i => new SequencePart(i, 0));
-
-  for (let robot = 1; robot <= numRobots; robot++) {
-    outcomes = [];
-
-    for (const sequencePart of sequencePartsForRobot) {
-      const resultSequence = processInputInParts(sequencePart, arrowPad);
-      outcomes.push(resultSequence);
-    }
-
-    outcomes = [findBestSequencesToUse(outcomes, arrowPad)];
-
-    sequencePartsForRobot = outcomes;
+  for (const sequencePart of firstLevelSequences) {
+    const resultSequence = processInputInParts(sequencePart, arrowPad);
+    outcomes.push(resultSequence);
   }
 
-  return outcomes[0];
-}
+  outcomes = [findBestSequencesToUse(outcomes, arrowPad)];
+
+  // Process first level differently
+
+  const sequencePartsForRobot = outcomes;
+
+  let sequenceLength = 0;
+
+  const partsStack: SequencePart[] = sequencePartsForRobot;
+
+  while (partsStack.length > 0) {
+    const currSequence = partsStack.pop()!;
+    if (currSequence.robotLevel === numRobots) {
+      sequenceLength += currSequence.part.length;
+    } else if (!currSequence.isCut) {
+      
+      const cuts: SequencePart[] = cutInPartsEndingOnA(currSequence);
+      
+      for (const cut of cuts) {
+        partsStack.push(cut);
+      }
+    } else { // Part is already cut, level < numRobots
+        const options = sequenceToType(
+          currSequence.part,
+          arrowPad,
+          true,
+        );
+    
+        const nextPart = new SequencePart(options.toStringsOptimized(), currSequence.robotLevel + 1, false);
+        partsStack.push(nextPart);
+      }
+    }
+
+    return sequenceLength;
+  }
+  
+//   for (let robot = 1; robot <= numRobots; robot++) {
+//     outcomes = [];
+
+//     for (const sequencePart of sequencePartsForRobot) {
+//       const resultSequence = processInputInParts(sequencePart, arrowPad);
+//       outcomes.push(resultSequence);
+//     }
+
+//     outcomes = [findBestSequencesToUse(outcomes, arrowPad)];
+
+//     sequencePartsForRobot = outcomes;
+//   }
+
+//   return outcomes[0].part.length;
+// }
 
 function calcBestSequence(
   input: string,
@@ -137,13 +180,13 @@ function calcBestSequence(
   const numPadOptions = sequenceToType(input, numPad, false);
 
   const numPadInputs = numPadOptions.toStrings();
-  const solution = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad).part;
+  const solutionLength = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad);
 
   const inputNum = parseInt(
     input.split("").filter((c) => c >= "0" && c <= "9").join(""),
   );
-  const outcome = inputNum * solution.length;
-  console.log(`${solution.length} x ${inputNum} = ${outcome}`);
+  const outcome = inputNum * solutionLength;
+  console.log(`${solutionLength} x ${inputNum} = ${outcome}`);
 
   return outcome;
 }
