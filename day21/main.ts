@@ -41,35 +41,80 @@ function findBestSequencesToUse(solutions: string[], arrowPad: Pad): string {
   return solutionInputs[0];
 }
 
+function getNextSliceIndex(input: string, minPartSize: number): number {
+  if (input.length <= minPartSize) {
+    return input.length;
+  }
+
+  const partAfterMinSize = input.slice(minPartSize);
+  const indexOfA = partAfterMinSize.indexOf("A");
+
+  if (indexOfA === -1) {
+    return input.length;
+  }
+
+  return minPartSize + indexOfA + 1; // Include the A
+}
+
+function cutInPartsEndingOnA(input: string): string[] {
+  const minPartSize = 50;
+  const parts: string[] = [];
+  let remaining = input;
+
+  let nextSliceIndex = getNextSliceIndex(remaining, minPartSize);
+
+  while (remaining.length > 0) {
+    const nextPart = remaining.slice(0, nextSliceIndex);
+    remaining = remaining.slice(nextSliceIndex);
+    parts.push(nextPart);
+
+    nextSliceIndex = getNextSliceIndex(remaining, minPartSize);
+  }
+
+  console.log(` > Cutting into ${parts.length} parts`);
+  return parts;
+}
+
+function processInputInParts(input: string, arrowPad: Pad): string {
+  const parts = cutInPartsEndingOnA(input);
+
+  const partialResults: string[] = [];
+
+  for (const part of parts) {
+    const options = sequenceToType(
+      part,
+      arrowPad,
+      true,
+    );
+
+    partialResults.push(options.toStringsOptimized());
+  }
+
+  return partialResults.join("");
+}
+
 function calcArrowPadBestSolution(
   inputs: string[],
   numRobots: number,
   arrowPad: Pad,
 ): string {
-  let solutions: string[] = [];
+  let outcomes: string[] = [];
   let inputForRobot = inputs;
 
   for (let robot = 1; robot <= numRobots; robot++) {
-    solutions = [];
+    outcomes = [];
 
     for (const input of inputForRobot) {
-      const options = sequenceToType(
-        input,
-        arrowPad,
-        true, // ###### Continue here, how does optimization work better
-      );
-
-      solutions.push(
-        findBestSequencesToUse(options.toStringsOptimized(), arrowPad),
-      );
+      const resultSequence = processInputInParts(input, arrowPad);
+      outcomes.push(resultSequence);
     }
 
-    solutions = [findBestSequencesToUse(solutions, arrowPad)];
+    outcomes = [findBestSequencesToUse(outcomes, arrowPad)];
 
-    inputForRobot = solutions;
+    inputForRobot = outcomes;
   }
 
-  return solutions[0];
+  return outcomes[0];
 }
 
 function calcBestSequence(
@@ -81,21 +126,13 @@ function calcBestSequence(
   const numPadOptions = sequenceToType(input, numPad, false);
 
   const numPadInputs = numPadOptions.toStrings();
-  const solutions = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad);
+  const solution = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad);
 
-  // console.log();
-  // console.log("*****");
-
-  // console.log(numPadSolutions.join("\n"));
-  // console.log();
-  // console.log();
-
-  const shortest = solutions.length;
   const inputNum = parseInt(
     input.split("").filter((c) => c >= "0" && c <= "9").join(""),
   );
-  const outcome = inputNum * shortest;
-  console.log(`${shortest} x ${inputNum} = ${outcome}`);
+  const outcome = inputNum * solution.length;
+  console.log(`${solution.length} x ${inputNum} = ${outcome}`);
 
   return outcome;
 }
@@ -128,7 +165,7 @@ if (import.meta.main) {
   let sum = 0;
 
   for (const input of inputLines) {
-    sum += calcBestSequence(input, 2, numPad, arrowPad);
+    sum += calcBestSequence(input, 15, numPad, arrowPad);
   }
   // <vA<AA>>^AvAA^<A>Av<<A>A^>Av<<A>>^AvAA^<A>A
   // <vA<AA>>^AvAA^<A>Av<<A>A + ^>Av<<A>>^AvAA^<A>A

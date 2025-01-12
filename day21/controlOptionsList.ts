@@ -56,7 +56,7 @@ export class ControlOptionsList {
     return aggr;
   }
 
-  toStringsOptimized(): string[] {
+  toStringsOptimized(): string {
     const aggr: string[] = [];
 
     for (let pos = 0; pos < this.list.length; pos++) {
@@ -69,6 +69,6 @@ export class ControlOptionsList {
       }
     }
 
-    return [aggr.join("")];
+    return aggr.join("");
   }
 }
