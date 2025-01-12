@@ -33,6 +33,23 @@ function lengthShortest(texts: string[]): number {
   return res;
 }
 
+function findBestSequencesToUse(solutions: string[], arrowPad: Pad): string[] {
+  let minDistSquared = Number.MAX_SAFE_INTEGER;
+  let solutionInputs = solutions;
+
+  for (let i = 0; i < solutionInputs.length; i++) {
+    const costSquared = distCostSquared(solutionInputs[i], arrowPad);
+    minDistSquared = Math.min(costSquared, minDistSquared);
+  }
+
+  solutionInputs = solutionInputs.filter((s) =>
+    distCostSquared(s, arrowPad) === minDistSquared
+  );
+
+  // Take the first input with minimum distCostSquared. Apparently the others give the same result (or so it seems)
+  return solutionInputs.slice(0, 1);
+}
+
 function calcArrowPadSolutions(
   inputs: string[],
   numRobots: number,
@@ -51,7 +68,9 @@ function calcArrowPadSolutions(
         arrowPad,
       );
 
-      for (const solution of options.toStrings()) {
+      for (
+        const solution of findBestSequencesToUse(options.toStrings(), arrowPad)
+      ) {
         const numArrowChanges = arrowChanges(solution);
 
         if (numArrowChanges <= minArrowChanges) {
@@ -62,21 +81,11 @@ function calcArrowPadSolutions(
     }
 
     const unfilteredLength = solutions.length;
-    solutions = solutions.filter((s) => arrowChanges(s) === minArrowChanges);
-
-    let minDistSquared = Number.MAX_SAFE_INTEGER;
-    for (let i = 0; i < solutions.length; i++) {
-      const costSquared = distCostSquared(solutions[i], arrowPad);
-      minDistSquared = Math.min(costSquared, minDistSquared);
-    }
-
-    solutions = solutions.filter((s) =>
-      distCostSquared(s, arrowPad) === minDistSquared
-    );
+    solutions = findBestSequencesToUse(solutions, arrowPad);
 
     const filteredLength = solutions.length;
 
-    // console.log(` > Filtered ${filteredLength} of ${unfilteredLength}`);
+    console.log(` > Filtered ${filteredLength} of ${unfilteredLength}`);
     inputForRobot = solutions;
   }
 
@@ -158,15 +167,15 @@ if (import.meta.main) {
   for (const input of inputLines) {
     sum += calcBestSequence(input, 2, numPad, arrowPad);
   }
-  // let solutions = calcArrowPadSolutions(["^<"], 3, arrowPad);
+  // let solutions = calcArrowPadSolutions(["<vA<AA>>^AvAA^<A>Av<<A>A^>Av<<A>>^AvAA^<A>A"], 1, arrowPad);
   // const shortestLength = lengthShortest(solutions);
   // const unfilteredLength = solutions.length;
-  // //solutions = solutions.filter(s => s.length === shortestLength).toSorted();
+  // // solutions = solutions.filter(s => s.length === shortestLength).toSorted();
   // const filteredLength = solutions.length;
 
-  // console.log(solutions.map(s => `${s} (${arrowChanges(s)})`).join("\n"));
+  // console.log(solutions.map(s => `${s} (${arrowChanges(s)}) [${distCostSquared(s, arrowPad)}]`).join("\n"));
   // console.log(`Shortest length ` + shortestLength);
-  // console.log(`Remaining ${filteredLength} of ${unfilteredLength}`);
+  // // console.log(`Remaining ${filteredLength} of ${unfilteredLength}`);
 
   console.log(sum);
 }
