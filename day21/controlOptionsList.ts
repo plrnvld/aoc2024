@@ -62,10 +62,11 @@ export class ControlOptionsList {
     for (let pos = 0; pos < this.list.length; pos++) {
       const curr = this.list[pos][0];
 
-      if (this.list[pos].length === 0)
+      if (this.list[pos].length === 0) {
         aggr.push("A");
-      else 
+      } else {
         aggr.push(curr);
+      }
     }
 
     return [aggr.join("")];

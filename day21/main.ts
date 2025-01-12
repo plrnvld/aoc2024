@@ -4,7 +4,7 @@ import { Pad } from "./pad.ts";
 function sequenceToType(
   keys: string,
   pad: Pad,
-  optimize: boolean
+  optimize: boolean,
 ): ControlOptionsList {
   const directionsList = new ControlOptionsList();
 
@@ -24,17 +24,7 @@ function sequenceToType(
   return directionsList;
 }
 
-function lengthShortest(texts: string[]): number {
-  let res = texts[0].length;
-
-  for (let i = 1; i < texts.length; i++) {
-    res = Math.min(res, texts[i].length);
-  }
-
-  return res;
-}
-
-function findBestSequencesToUse(solutions: string[], arrowPad: Pad): string[] {
+function findBestSequencesToUse(solutions: string[], arrowPad: Pad): string {
   let minDistSquared = Number.MAX_SAFE_INTEGER;
   let solutionInputs = solutions;
 
@@ -48,14 +38,14 @@ function findBestSequencesToUse(solutions: string[], arrowPad: Pad): string[] {
   );
 
   // Take the first input with minimum distCostSquared. Apparently the others give the same result (or so it seems)
-  return solutionInputs.slice(0, 1);
+  return solutionInputs[0];
 }
 
-function calcArrowPadSolutions(
+function calcArrowPadBestSolution(
   inputs: string[],
   numRobots: number,
   arrowPad: Pad,
-): string[] {
+): string {
   let solutions: string[] = [];
   let inputForRobot = inputs;
 
@@ -66,26 +56,20 @@ function calcArrowPadSolutions(
       const options = sequenceToType(
         input,
         arrowPad,
-        true // ###### Continue here, how does optimization work better
+        true, // ###### Continue here, how does optimization work better
       );
 
-      for (
-        const solution of findBestSequencesToUse(options.toStringsOptimized(), arrowPad)
-      ) {
-        solutions.push(solution);
-      }
+      solutions.push(
+        findBestSequencesToUse(options.toStringsOptimized(), arrowPad),
+      );
     }
 
-    const unfilteredLength = solutions.length;
-    solutions = findBestSequencesToUse(solutions, arrowPad);
+    solutions = [findBestSequencesToUse(solutions, arrowPad)];
 
-    const filteredLength = solutions.length;
-
-    console.log(` > Filtered ${filteredLength} of ${unfilteredLength}`);
     inputForRobot = solutions;
   }
 
-  return solutions;
+  return solutions[0];
 }
 
 function calcBestSequence(
@@ -97,7 +81,7 @@ function calcBestSequence(
   const numPadOptions = sequenceToType(input, numPad, false);
 
   const numPadInputs = numPadOptions.toStrings();
-  const solutions = calcArrowPadSolutions(numPadInputs, numRobots, arrowPad);
+  const solutions = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad);
 
   // console.log();
   // console.log("*****");
@@ -106,7 +90,7 @@ function calcBestSequence(
   // console.log();
   // console.log();
 
-  const shortest = lengthShortest(solutions);
+  const shortest = solutions.length;
   const inputNum = parseInt(
     input.split("").filter((c) => c >= "0" && c <= "9").join(""),
   );
@@ -144,15 +128,17 @@ if (import.meta.main) {
   let sum = 0;
 
   for (const input of inputLines) {
-    sum += calcBestSequence(input, 12, numPad, arrowPad);
+    sum += calcBestSequence(input, 2, numPad, arrowPad);
   }
-  // let solutions = calcArrowPadSolutions(["<vA<AA>>^AvAA^<A>Av<<A>A^>Av<<A>>^AvAA^<A>A"], 1, arrowPad);
+  // <vA<AA>>^AvAA^<A>Av<<A>A^>Av<<A>>^AvAA^<A>A
+  // <vA<AA>>^AvAA^<A>Av<<A>A + ^>Av<<A>>^AvAA^<A>A
+  // let solutions = calcArrowPadSolutions(["^>Av<<A>>^AvAA^<A>A"], 1, arrowPad);
   // const shortestLength = lengthShortest(solutions);
   // const unfilteredLength = solutions.length;
   // // solutions = solutions.filter(s => s.length === shortestLength).toSorted();
   // const filteredLength = solutions.length;
 
-  // console.log(solutions.map(s => `${s} (${arrowChanges(s)}) [${distCostSquared(s, arrowPad)}]`).join("\n"));
+  // console.log(solutions.map(s => `${s}`).join("\n"));
   // console.log(`Shortest length ` + shortestLength);
   // // console.log(`Remaining ${filteredLength} of ${unfilteredLength}`);
 
