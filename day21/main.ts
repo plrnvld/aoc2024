@@ -60,7 +60,6 @@ function calcArrowPadSolutions(
 
   for (let robot = 1; robot <= numRobots; robot++) {
     solutions = [];
-    let minArrowChanges = Number.MAX_SAFE_INTEGER;
 
     for (const input of inputForRobot) {
       const options = sequenceToType(
@@ -71,12 +70,7 @@ function calcArrowPadSolutions(
       for (
         const solution of findBestSequencesToUse(options.toStrings(), arrowPad)
       ) {
-        const numArrowChanges = arrowChanges(solution);
-
-        if (numArrowChanges <= minArrowChanges) {
-          minArrowChanges = numArrowChanges;
-          solutions.push(solution);
-        }
+        solutions.push(solution);
       }
     }
 
@@ -118,23 +112,6 @@ function calcBestSequence(
   console.log(`${shortest} x ${inputNum} = ${outcome}`);
 
   return outcome;
-}
-
-function arrowChanges(solution: string): number {
-  let changes = 0;
-
-  let c = solution[0];
-
-  for (let i = 1; i < solution.length; i++) {
-    const newC = solution[i];
-
-    if (newC !== c) {
-      c = newC;
-      changes += 1;
-    }
-  }
-
-  return changes;
 }
 
 function distCostSquared(solution: string, pad: Pad): number {
