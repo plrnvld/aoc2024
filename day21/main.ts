@@ -24,17 +24,17 @@ function sequenceToType(
   return directionsList;
 }
 
-function findBestSequencesToUse(solutions: string[], arrowPad: Pad): string {
+function findBestSequencesToUse(sequenceParts: SequencePart[], arrowPad: Pad): SequencePart {
   let minDistSquared = Number.MAX_SAFE_INTEGER;
-  let solutionInputs = solutions;
+  let solutionInputs = sequenceParts;
 
   for (let i = 0; i < solutionInputs.length; i++) {
-    const costSquared = distCostSquared(solutionInputs[i], arrowPad);
+    const costSquared = distCostSquared(solutionInputs[i].part, arrowPad);
     minDistSquared = Math.min(costSquared, minDistSquared);
   }
 
   solutionInputs = solutionInputs.filter((s) =>
-    distCostSquared(s, arrowPad) === minDistSquared
+    distCostSquared(s.part, arrowPad) === minDistSquared
   );
 
   // Take the first input with minimum distCostSquared. Apparently the others give the same result (or so it seems)
@@ -56,15 +56,15 @@ function getNextSliceIndex(input: string, minPartSize: number): number {
   return minPartSize + indexOfA + 1; // Include the A
 }
 
-function cutInPartsEndingOnA(input: string): string[] {
-  const minPartSize = 500;
-  const parts: string[] = [];
-  let remaining = input;
+function cutInPartsEndingOnA(sequencePart: SequencePart): SequencePart[] {
+  const minPartSize = 10000;
+  const parts: SequencePart[] = [];
+  let remaining = sequencePart.part;
 
   let nextSliceIndex = getNextSliceIndex(remaining, minPartSize);
 
   while (remaining.length > 0) {
-    const nextPart = remaining.slice(0, nextSliceIndex);
+    const nextPart = new SequencePart(remaining.slice(0, nextSliceIndex), sequencePart.robotLevel);
     remaining = remaining.slice(nextSliceIndex);
     parts.push(nextPart);
 
@@ -75,14 +75,25 @@ function cutInPartsEndingOnA(input: string): string[] {
   return parts;
 }
 
-function processInputInParts(input: string, arrowPad: Pad): string {
-  const parts = cutInPartsEndingOnA(input);
+class SequencePart {
+  robotLevel: number;
+  part: string;
+
+  constructor(part: string, robotLevel: number) {
+    this.part = part;
+    this.robotLevel = robotLevel;
+  }
+}
+
+function processInputInParts(sequencePart: SequencePart, arrowPad: Pad): SequencePart {
+  const level = sequencePart.robotLevel;
+  const sequenceParts: SequencePart[] = cutInPartsEndingOnA(sequencePart);
 
   const partialResults: string[] = [];
 
-  for (const part of parts) {
+  for (const sequencePart of sequenceParts) {
     const options = sequenceToType(
-      part,
+      sequencePart.part,
       arrowPad,
       true,
     );
@@ -90,28 +101,28 @@ function processInputInParts(input: string, arrowPad: Pad): string {
     partialResults.push(options.toStringsOptimized());
   }
 
-  return partialResults.join("");
+  return new SequencePart(partialResults.join(""), level + 1);
 }
 
 function calcArrowPadBestSolution(
   inputs: string[],
   numRobots: number,
   arrowPad: Pad,
-): string {
-  let outcomes: string[] = [];
-  let inputForRobot = inputs;
+): SequencePart {
+  let outcomes: SequencePart[] = [];
+  let sequencePartsForRobot = inputs.map(i => new SequencePart(i, 0));
 
   for (let robot = 1; robot <= numRobots; robot++) {
     outcomes = [];
 
-    for (const input of inputForRobot) {
-      const resultSequence = processInputInParts(input, arrowPad);
+    for (const sequencePart of sequencePartsForRobot) {
+      const resultSequence = processInputInParts(sequencePart, arrowPad);
       outcomes.push(resultSequence);
     }
 
     outcomes = [findBestSequencesToUse(outcomes, arrowPad)];
 
-    inputForRobot = outcomes;
+    sequencePartsForRobot = outcomes;
   }
 
   return outcomes[0];
@@ -126,7 +137,7 @@ function calcBestSequence(
   const numPadOptions = sequenceToType(input, numPad, false);
 
   const numPadInputs = numPadOptions.toStrings();
-  const solution = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad);
+  const solution = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad).part;
 
   const inputNum = parseInt(
     input.split("").filter((c) => c >= "0" && c <= "9").join(""),
@@ -165,7 +176,7 @@ if (import.meta.main) {
   let sum = 0;
 
   for (const input of inputLines) {
-    sum += calcBestSequence(input, 18, numPad, arrowPad);
+    sum += calcBestSequence(input, 10, numPad, arrowPad);
   }
   // <vA<AA>>^AvAA^<A>Av<<A>A^>Av<<A>>^AvAA^<A>A
   // <vA<AA>>^AvAA^<A>Av<<A>A + ^>Av<<A>>^AvAA^<A>A
@@ -183,3 +194,5 @@ if (import.meta.main) {
 }
 
 // Part 1: 238078
+
+// Part 2: for 10 levels --> 353796830
