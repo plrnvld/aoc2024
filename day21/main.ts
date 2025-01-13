@@ -56,19 +56,18 @@ function getNextSliceIndex(input: string, minPartSize: number): number {
   return minPartSize + indexOfA + 1; // Include the A
 }
 
-function cutInPartsEndingOnA(sequencePart: SequencePart): SequencePart[] {
-  const minPartSize = 100;
+function cutInPartsEndingOnA(sequencePart: SequencePart, minCutSize: number): SequencePart[] {
   const parts: SequencePart[] = [];
   let remaining = sequencePart.part;
 
-  let nextSliceIndex = getNextSliceIndex(remaining, minPartSize);
+  let nextSliceIndex = getNextSliceIndex(remaining, minCutSize);
 
   while (remaining.length > 0) {
     const nextPart = new SequencePart(remaining.slice(0, nextSliceIndex), sequencePart.robotLevel, true);
     remaining = remaining.slice(nextSliceIndex);
     parts.push(nextPart);
 
-    nextSliceIndex = getNextSliceIndex(remaining, minPartSize);
+    nextSliceIndex = getNextSliceIndex(remaining, minCutSize);
   }
 
   // console.log(` > Cutting into ${parts.length} parts`);
@@ -89,7 +88,7 @@ class SequencePart {
 
 function processInputInParts(sequencePart: SequencePart, arrowPad: Pad): SequencePart {
   const level = sequencePart.robotLevel;
-  const sequenceParts: SequencePart[] = cutInPartsEndingOnA(sequencePart);
+  const sequenceParts: SequencePart[] = cutInPartsEndingOnA(sequencePart, 100);
 
   const partialResults: string[] = [];
 
@@ -110,6 +109,7 @@ function calcArrowPadBestSolution(
   inputs: string[],
   numRobots: number,
   arrowPad: Pad,
+  cache: Map<string, number> | null
 ): number {
   const firstLevelSequences = inputs.map(i => new SequencePart(i, 0, false));
   
@@ -131,11 +131,24 @@ function calcArrowPadBestSolution(
 
   while (partsStack.length > 0) {
     const currSequence = partsStack.pop()!;
-    if (currSequence.robotLevel === numRobots) {
+    if (cache !== null && currSequence.robotLevel === 7) { // Solution should be in cache
+      const cuts: SequencePart[] = cutInPartsEndingOnA(currSequence, 0); // Cut size 0, get all separate sequences ending in "A"
+
+      let cachedSum = 0;
+      for (const cut of cuts) {
+        const cachedOutcome = cache.get(cut.part);
+        if (cachedOutcome === undefined)
+          throw new Error(`Part ${cut.part} not in cache.`);
+        
+        cachedSum += cachedOutcome;
+      }
+
+      return cachedSum;
+    } else if (currSequence.robotLevel === numRobots) {
       sequenceLength += currSequence.part.length;
     } else if (!currSequence.isCut) {
       
-      const cuts: SequencePart[] = cutInPartsEndingOnA(currSequence);
+      const cuts: SequencePart[] = cutInPartsEndingOnA(currSequence, 100);
       
       for (const cut of cuts) {
         partsStack.push(cut);
@@ -155,32 +168,17 @@ function calcArrowPadBestSolution(
     return sequenceLength;
   }
   
-//   for (let robot = 1; robot <= numRobots; robot++) {
-//     outcomes = [];
-
-//     for (const sequencePart of sequencePartsForRobot) {
-//       const resultSequence = processInputInParts(sequencePart, arrowPad);
-//       outcomes.push(resultSequence);
-//     }
-
-//     outcomes = [findBestSequencesToUse(outcomes, arrowPad)];
-
-//     sequencePartsForRobot = outcomes;
-//   }
-
-//   return outcomes[0].part.length;
-// }
-
 function calcBestSequence(
   input: string,
   numRobots: number,
   numPad: Pad,
   arrowPad: Pad,
+  cache: Map<string, number>
 ): number {
   const numPadOptions = sequenceToType(input, numPad, false);
 
   const numPadInputs = numPadOptions.toStrings();
-  const solutionLength = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad);
+  const solutionLength = calcArrowPadBestSolution(numPadInputs, numRobots, arrowPad, cache);
 
   const inputNum = parseInt(
     input.split("").filter((c) => c >= "0" && c <= "9").join(""),
@@ -203,6 +201,28 @@ export function distCostSquared(solution: string, pad: Pad): number {
   return costSquared;
 }
 
+function buildSolutionNumCache(arrowPad: Pad, levelsToCache: number): Map<string, number> {
+  const allRoutes: Set<string> = new Set();
+  allRoutes.add("A");
+
+  for (const [_, dir] of arrowPad.directionsMap) {
+    const validOptions = dir.validControlOptions;
+
+    for (const validOption of validOptions) {
+      const validOptionString = validOption.map(c => c as string).join("") + "A";
+      allRoutes.add(validOptionString);
+    }    
+  }
+
+  const mapWithSolutionNums: Map<string, number> = new Map();
+  for (const item of allRoutes) {
+    const numSolutions = calcArrowPadBestSolution([item], levelsToCache, arrowPad, null);
+    mapWithSolutionNums.set(item, numSolutions);
+  }
+
+  return mapWithSolutionNums;
+}
+
 if (import.meta.main) {
   const numPadText = await Deno.readTextFile("numpad");
   const numPadLines = numPadText.split("\n");
@@ -216,26 +236,35 @@ if (import.meta.main) {
   const numPad = new Pad(numPadLines);
   const arrowPad = new Pad(arrowPadLines);
 
+  const cache = buildSolutionNumCache(arrowPad, 5);
+
+  for (const [key, val] of cache) {
+    console.log(`  [${key}] => ${val}`);
+  }
+
   let sum = 0;
 
   for (const input of inputLines) {
-    sum += calcBestSequence(input, 10, numPad, arrowPad);
+    sum += calcBestSequence(input, 10, numPad, arrowPad, cache);
   }
-  // <vA<AA>>^AvAA^<A>Av<<A>A^>Av<<A>>^AvAA^<A>A
-  // <vA<AA>>^AvAA^<A>Av<<A>A + ^>Av<<A>>^AvAA^<A>A
-  // let solutions = calcArrowPadSolutions(["^>Av<<A>>^AvAA^<A>A"], 1, arrowPad);
-  // const shortestLength = lengthShortest(solutions);
-  // const unfilteredLength = solutions.length;
-  // // solutions = solutions.filter(s => s.length === shortestLength).toSorted();
-  // const filteredLength = solutions.length;
 
-  // console.log(solutions.map(s => `${s}`).join("\n"));
-  // console.log(`Shortest length ` + shortestLength);
-  // // console.log(`Remaining ${filteredLength} of ${unfilteredLength}`);
-
+  // for (const [key, dir] of arrowPad.directionsMap) {
+  //   console.log(`> ${JSON.stringify(dir)}`);
+  // }
+  
+  // const pattern = "A";
+  // const solutionLength = calcArrowPadBestSolution([pattern], 15, arrowPad);
+  // console.log(`Solution length for '${pattern}' = ${solutionLength}`)
+  
   console.log(sum);
 }
 
 // Part 1: 238078
 
-// Part 2: for 10 levels --> 353796830
+// Part 2: for 10 levels --> 
+// 353796830 
+//  37327494
+// 233912128
+// Part 2: 
+// 383076814233 too low
+// 958909626187 too low
