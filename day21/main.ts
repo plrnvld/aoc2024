@@ -109,7 +109,7 @@ function calcArrowPadBestSolution(
   inputs: string[],
   numRobots: number,
   arrowPad: Pad,
-  cache: Map<string, number> | null
+  cache: SolutionNumsCache | null
 ): number {
   const firstLevelSequences = inputs.map(i => new SequencePart(i, 0, false));
   
@@ -131,19 +131,18 @@ function calcArrowPadBestSolution(
 
   while (partsStack.length > 0) {
     const currSequence = partsStack.pop()!;
-    if (cache !== null && currSequence.robotLevel === 7) { // Solution should be in cache
+    
+    if (cache !== null && currSequence.robotLevel + cache.levelsCached === numRobots) { // Solution should be in cache
+      
       const cuts: SequencePart[] = cutInPartsEndingOnA(currSequence, 0); // Cut size 0, get all separate sequences ending in "A"
-
-      let cachedSum = 0;
+      
       for (const cut of cuts) {
-        const cachedOutcome = cache.get(cut.part);
+        const cachedOutcome = cache.cacheMap.get(cut.part);
         if (cachedOutcome === undefined)
           throw new Error(`Part ${cut.part} not in cache.`);
         
-        cachedSum += cachedOutcome;
+        sequenceLength += cachedOutcome;
       }
-
-      return cachedSum;
     } else if (currSequence.robotLevel === numRobots) {
       sequenceLength += currSequence.part.length;
     } else if (!currSequence.isCut) {
@@ -173,7 +172,7 @@ function calcBestSequence(
   numRobots: number,
   numPad: Pad,
   arrowPad: Pad,
-  cache: Map<string, number>
+  cache: SolutionNumsCache | null
 ): number {
   const numPadOptions = sequenceToType(input, numPad, false);
 
@@ -201,7 +200,17 @@ export function distCostSquared(solution: string, pad: Pad): number {
   return costSquared;
 }
 
-function buildSolutionNumCache(arrowPad: Pad, levelsToCache: number): Map<string, number> {
+class SolutionNumsCache {
+  cacheMap: Map<string, number>;
+  levelsCached: number;
+
+  constructor(cacheMap: Map<string, number>, levelsCached: number) {
+    this.cacheMap = cacheMap;
+    this.levelsCached = levelsCached;
+  }
+}
+
+function buildSolutionNumCache(arrowPad: Pad, levelsToCache: number): SolutionNumsCache {
   const allRoutes: Set<string> = new Set();
   allRoutes.add("A");
 
@@ -220,7 +229,7 @@ function buildSolutionNumCache(arrowPad: Pad, levelsToCache: number): Map<string
     mapWithSolutionNums.set(item, numSolutions);
   }
 
-  return mapWithSolutionNums;
+  return new SolutionNumsCache(mapWithSolutionNums, levelsToCache);
 }
 
 if (import.meta.main) {
@@ -236,25 +245,21 @@ if (import.meta.main) {
   const numPad = new Pad(numPadLines);
   const arrowPad = new Pad(arrowPadLines);
 
-  const cache = buildSolutionNumCache(arrowPad, 5);
+  const cache = buildSolutionNumCache(arrowPad, 14);
 
-  for (const [key, val] of cache) {
+  for (const [key, val] of cache.cacheMap) {
     console.log(`  [${key}] => ${val}`);
   }
 
   let sum = 0;
 
   for (const input of inputLines) {
-    sum += calcBestSequence(input, 10, numPad, arrowPad, cache);
+    sum += calcBestSequence(input, 25, numPad, arrowPad, cache);
   }
 
   // for (const [key, dir] of arrowPad.directionsMap) {
   //   console.log(`> ${JSON.stringify(dir)}`);
   // }
-  
-  // const pattern = "A";
-  // const solutionLength = calcArrowPadBestSolution([pattern], 15, arrowPad);
-  // console.log(`Solution length for '${pattern}' = ${solutionLength}`)
   
   console.log(sum);
 }
@@ -268,3 +273,13 @@ if (import.meta.main) {
 // Part 2: 
 // 383076814233 too low
 // 958909626187 too low
+// 335879439503508 too high
+// 335879439503508
+
+// For only 2 levels
+// 70 x 638 = 44660
+// 66 x 965 = 63690
+// 66 x 780 = 51480
+// 76 x 803 = 61028
+// 70 x 246 = 17220
+// 238078
