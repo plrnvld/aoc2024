@@ -1,4 +1,5 @@
 import { ControlOptionsList } from "./controlOptionsList.ts";
+import { cutInPartsEndingOnA, SequencePart } from "./cutter.ts";
 import { Pad } from "./pad.ts";
 
 function sequenceToType(
@@ -39,51 +40,6 @@ function findBestSequencesToUse(sequenceParts: SequencePart[], arrowPad: Pad): S
 
   // Take the first input with minimum distCostSquared. Apparently the others give the same result (or so it seems)
   return solutionInputs[0];
-}
-
-function getNextSliceIndex(input: string, minPartSize: number): number {
-  if (input.length <= minPartSize) {
-    return input.length;
-  }
-
-  const partAfterMinSize = input.slice(minPartSize);
-  const indexOfA = partAfterMinSize.indexOf("A");
-
-  if (indexOfA === -1) {
-    return input.length;
-  }
-
-  return minPartSize + indexOfA + 1; // Include the A
-}
-
-function cutInPartsEndingOnA(sequencePart: SequencePart, minCutSize: number): SequencePart[] {
-  const parts: SequencePart[] = [];
-  let remaining = sequencePart.part;
-
-  let nextSliceIndex = getNextSliceIndex(remaining, minCutSize);
-
-  while (remaining.length > 0) {
-    const nextPart = new SequencePart(remaining.slice(0, nextSliceIndex), sequencePart.robotLevel, true);
-    remaining = remaining.slice(nextSliceIndex);
-    parts.push(nextPart);
-
-    nextSliceIndex = getNextSliceIndex(remaining, minCutSize);
-  }
-
-  // console.log(` > Cutting into ${parts.length} parts`);
-  return parts;
-}
-
-class SequencePart {
-  robotLevel: number;
-  part: string;
-  isCut: boolean;
-
-  constructor(part: string, robotLevel: number, isCut: boolean) {
-    this.part = part;
-    this.robotLevel = robotLevel;
-    this.isCut = isCut;
-  }
 }
 
 function processInputInParts(sequencePart: SequencePart, arrowPad: Pad): SequencePart {
@@ -166,6 +122,39 @@ function calcArrowPadBestSolution(
 
     return sequenceLength;
   }
+
+  function calcArrowPadBestSolutionOneLevelUsingCache(
+    input: string,
+    arrowPad: Pad,
+    cache: SolutionNumsCache
+  ): number {
+    
+    const numRobots = cache.levelsCached + 1;
+    const sequencePart = new SequencePart(input, cache.levelsCached, false);
+    
+    const resultSequence = processInputInParts(sequencePart, arrowPad);
+    
+    let sequenceLength = 0;
+  
+    const partsStack: SequencePart[] = [];
+    const cuts: SequencePart[] = cutInPartsEndingOnA(resultSequence, 0);
+        
+    for (const cut of cuts) {
+      partsStack.push(cut);
+    }
+
+    while (partsStack.length > 0) {
+      const currSequence = partsStack.pop()!;
+
+      const cachedOutcome = cache.cacheMap.get(currSequence.part);
+      if (cachedOutcome === undefined)
+        throw new Error(`Part ${currSequence.part} not in cache.`);
+      
+      sequenceLength += cachedOutcome;
+    }
+
+    return sequenceLength;
+  }
   
 function calcBestSequence(
   input: string,
@@ -211,6 +200,9 @@ class SolutionNumsCache {
 }
 
 function buildSolutionNumCache(arrowPad: Pad, levelsToCache: number): SolutionNumsCache {
+  console.log(`Building level ${levelsToCache} arrowPad cache.`);
+
+  // Create set with all routes
   const allRoutes: Set<string> = new Set();
   allRoutes.add("A");
 
@@ -223,13 +215,31 @@ function buildSolutionNumCache(arrowPad: Pad, levelsToCache: number): SolutionNu
     }    
   }
 
+  // Calculate values for the required number of levels
   const mapWithSolutionNums: Map<string, number> = new Map();
   for (const item of allRoutes) {
     const numSolutions = calcArrowPadBestSolution([item], levelsToCache, arrowPad, null);
     mapWithSolutionNums.set(item, numSolutions);
   }
 
+  console.log("Cache created.");
   return new SolutionNumsCache(mapWithSolutionNums, levelsToCache);
+}
+
+function takeCacheToTheNextLevel(cache: SolutionNumsCache, arrowPad: Pad): SolutionNumsCache {
+  const nextLevel = cache.levelsCached + 1;
+  console.log(`Building level ${nextLevel} cache.`);
+
+  const allRoutes = cache.cacheMap.keys();
+
+   // Calculate values for the required number of levels
+   const mapWithSolutionNums: Map<string, number> = new Map();
+   for (const item of allRoutes) {
+     const numSolutions = calcArrowPadBestSolutionOneLevelUsingCache(item, arrowPad, cache);
+     mapWithSolutionNums.set(item, numSolutions);
+   }
+
+   return new SolutionNumsCache(mapWithSolutionNums, nextLevel);
 }
 
 if (import.meta.main) {
@@ -245,7 +255,13 @@ if (import.meta.main) {
   const numPad = new Pad(numPadLines);
   const arrowPad = new Pad(arrowPadLines);
 
-  const cache = buildSolutionNumCache(arrowPad, 14);
+  const preCache = buildSolutionNumCache(arrowPad, 1);
+  let tempCache = takeCacheToTheNextLevel(preCache, arrowPad);
+  
+  while (tempCache.levelsCached < 15)
+    tempCache = takeCacheToTheNextLevel(tempCache, arrowPad);
+
+  const cache = tempCache;
 
   for (const [key, val] of cache.cacheMap) {
     console.log(`  [${key}] => ${val}`);
@@ -253,15 +269,17 @@ if (import.meta.main) {
 
   let sum = 0;
 
-  for (const input of inputLines) {
-    sum += calcBestSequence(input, 25, numPad, arrowPad, cache);
-  }
+  // for (const input of inputLines) {
+  //   sum += calcBestSequence(input, 25, numPad, arrowPad, cache);
+  // }
 
   // for (const [key, dir] of arrowPad.directionsMap) {
   //   console.log(`> ${JSON.stringify(dir)}`);
   // }
   
   console.log(sum);
+  console.log(sum.toString().length + " digits");
+
 }
 
 // Part 1: 238078
@@ -283,3 +301,25 @@ if (import.meta.main) {
 // 76 x 803 = 61028
 // 70 x 246 = 17220
 // 238078
+
+
+
+//   [A] => 1
+//   [>A] => 1685064
+//   [v<A] => 3544745
+//   [vA] => 2502876
+//   [>vA] => 3233793
+//   [v>A] => 2669135
+//   [<A] => 2608204
+//   [<v<A] => 4323192
+//   [v<<A] => 3544746
+//   [<vA] => 3281323
+//   [>^A] => 2983775
+//   [>>^A] => 2983776
+//   [>^>A] => 4062168
+//   [>>A] => 1685065
+//   [^A] => 1714988
+//   [^>A] => 2793381
+//   [<^A] => 3281323
+//   [^<A] => 3650071
+//   [<<A] => 2608205
