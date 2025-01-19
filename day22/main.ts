@@ -80,29 +80,24 @@ function getMatchingPriceWhileBuildingPrices(
 ): number | undefined {
   let currSecret = secret;
   let prevPrice = Number(secret % 10n);
-  const currChanges: number[] = [];
+
+  let matchPos = 0;
 
   for (let i = 0; i < 2000; i++) {
     currSecret = nextSecret(currSecret);
     const currPrice = Number(currSecret % 10n);
     const currChange = currPrice - prevPrice;
-    const len = currChanges.push(currChange);
-    if (len === 5) {
-      currChanges.shift();
+
+    if (currChange === changes[matchPos]) {
+      matchPos++;
+    } else if (currChange === changes[0]) {
+      matchPos = 1;
+    } else {
+      matchPos = 0;
     }
 
-    if (currChanges.length === 4) {
-      let isMatch = true;
-
-      for (let p = 0; p < 4; p++) {
-        if (changes[p] !== currChanges[p]) {
-          isMatch = false;
-        }
-      }
-
-      if (isMatch) {
-        return currPrice;
-      }
+    if (matchPos === 4) {
+      return currPrice;
     }
 
     prevPrice = currPrice;
@@ -121,7 +116,7 @@ if (import.meta.main) {
   let secretIndex = 0;
 
   const start = performance.now();
-  
+
   for (const secret of secrets) {
     console.log(`Processing ${secretIndex++}`);
 
@@ -129,7 +124,7 @@ if (import.meta.main) {
       for (let diff2 = -9; diff2 < 10; diff2++) {
         for (let diff3 = -9; diff3 < 10; diff3++) {
           for (let diff4 = -9; diff4 < 10; diff4++) {
-            const key = diff1.toString() + diff2.toString()  + diff3.toString() +
+            const key = diff1.toString() + diff2.toString() + diff3.toString() +
               diff4.toString();
 
             const priceFound = getMatchingPriceWhileBuildingPrices(secret, [
