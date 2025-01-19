@@ -1,11 +1,18 @@
-export function cutInPartsEndingOnA(sequencePart: SequencePart, minCutSize: number): SequencePart[] {
+export function cutInPartsEndingOnA(
+  sequencePart: SequencePart,
+  minCutSize: number,
+): SequencePart[] {
   const parts: SequencePart[] = [];
   let remaining = sequencePart.part;
 
   let nextSliceIndex = getNextSliceIndex(remaining, minCutSize);
 
   while (remaining.length > 0) {
-    const nextPart = new SequencePart(remaining.slice(0, nextSliceIndex), sequencePart.robotLevel, true);
+    const nextPart = new SequencePart(
+      remaining.slice(0, nextSliceIndex),
+      sequencePart.robotLevel,
+      true,
+    );
     remaining = remaining.slice(nextSliceIndex);
     parts.push(nextPart);
 
