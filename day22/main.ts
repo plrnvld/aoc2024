@@ -120,6 +120,7 @@ if (import.meta.main) {
 
   let secretIndex = 0;
 
+  const start = performance.now();
   
   for (const secret of secrets) {
     console.log(`Processing ${secretIndex++}`);
@@ -128,7 +129,7 @@ if (import.meta.main) {
       for (let diff2 = -9; diff2 < 10; diff2++) {
         for (let diff3 = -9; diff3 < 10; diff3++) {
           for (let diff4 = -9; diff4 < 10; diff4++) {
-            const key = diff1.toString() + diff2.toString() + diff3.toString() +
+            const key = diff1.toString() + diff2.toString()  + diff3.toString() +
               diff4.toString();
 
             const priceFound = getMatchingPriceWhileBuildingPrices(secret, [
@@ -150,6 +151,10 @@ if (import.meta.main) {
       }
     }
   }
+
+  const end = performance.now();
+
+  console.log(`Search took ${end - start} ms.`);
 
   let best = 0;
   let bestKey = "";
