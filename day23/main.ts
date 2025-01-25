@@ -12,7 +12,7 @@ class Edge {
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const lines = text.split("\n");
-  const edges = lines.map(line => new Edge(line));
+  const edges = lines.map((line) => new Edge(line));
 
   const allComputers: Set<string> = new Set();
 
@@ -43,30 +43,41 @@ if (import.meta.main) {
     connectedMap.set(edge.computer2, connectedSet2);
   }
 
-  const connectedTriplets: Set<string> = new Set();
+  let bestSet: Set<string> = new Set();
+  let bestSetSize = 0;
 
-  for (const [key, vals] of connectedMap) {
-    const connectedList = Array.from(vals.values());
-    
-    for (let i = 0; i < connectedList.length; i++) {
-      for (let j = i + 1; j < connectedList.length; j++) {
-        const computer1 = key;
-        const computer2 = connectedList[i];
-        const computer3 = connectedList[j];
-        
-        if (connectedMap.get(computer2)!.has(computer3)) { // Are the three connected
-          if (computer1.startsWith("t") || computer2.startsWith("t") || computer3.startsWith("t")) {
-            const namesCombined = [computer1, computer2, computer3].toSorted().join("");
+  for (const [key, values] of connectedMap) {
+    const valuesList = Array.from(values);
 
-            connectedTriplets.add(namesCombined);
-          }
+    const setFromKey: Set<string> = new Set();
+    setFromKey.add(key);
+
+    for (let j = 0; j < valuesList.length; j++) {
+      const next = valuesList[j];
+      let allConnected = true;
+
+      for (const compFromSet of setFromKey) {
+        const valuesConnectedToNext = connectedMap.get(next)!;
+        if (!valuesConnectedToNext.has(compFromSet)) {
+          allConnected = false;
         }
       }
-    }
-    
 
-    // console.log(`Computer '${key}': ${text}`);
+      if (allConnected) {
+        setFromKey.add(next);
+      }
+    }
+
+    const setSize = setFromKey.size;
+    if (setSize > bestSetSize) {
+      bestSetSize = setSize;
+      bestSet = setFromKey;
+    }
   }
 
-  console.log(connectedTriplets.size);
+  console.log(bestSet);
+
+  const bestList = Array.from(bestSet);
+  const sortedList = bestList.toSorted();
+  console.log(sortedList.join(","));
 }
