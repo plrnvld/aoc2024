@@ -25,8 +25,9 @@ class Lock {
 
   fits(key: Key): boolean {
     for (let i = 0; i < 5; i++) {
-      if (this.heights[i] + key.heights[i] > 5)
+      if (this.heights[i] + key.heights[i] > 5) {
         return false;
+      }
     }
     return true;
   }
@@ -50,8 +51,6 @@ class Key {
   }
 }
 
-
-
 if (import.meta.main) {
   const text = await Deno.readTextFile("input");
   const blocks = text.split("\n\n");
@@ -62,15 +61,22 @@ if (import.meta.main) {
     `${blocks.length} blocks: ${keys.length} keys and ${locks.length} locks`,
   );
 
-  const lockObjects = locks.map(line => line.split("\n")).map(lines => new Lock(lines));
-  const keyObjects = keys.map(line => line.split("\n")).map(lines => new Key(lines));
+  const lockObjects = locks.map((line) => line.split("\n")).map((lines) =>
+    new Lock(lines)
+  );
+  const keyObjects = keys.map((line) => line.split("\n")).map((lines) =>
+    new Key(lines)
+  );
 
   let fitting = 0;
 
-  for (const key of keyObjects)
-    for (const lock of lockObjects)
-      if (lock.fits(key))
+  for (const key of keyObjects) {
+    for (const lock of lockObjects) {
+      if (lock.fits(key)) {
         fitting++;
+      }
+    }
+  }
 
   console.log(fitting);
 }
